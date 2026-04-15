@@ -1,16 +1,17 @@
 ﻿namespace sigevet.Models
 {
-    public class Veterinario : Persona
+    public class Veterinario
     {
-        public required int idVeterinario {  get; set; }
+        public int idPersonaVet {  get; set; }
         public required String numeroTarjetaProfesional { get; set; }
-        public required DateTime fechaRegistroVeterinario { get; set; } = DateTime.Now;
-        public required DateTime fechaActualizacionVeterinario { get; set; } = DateTime.Now;
+        public DateTime fechaRegistroVeterinario { get; set; } = DateTime.Now;
+        public DateTime fechaActualizacionVeterinario { get; set; } = DateTime.Now;
         
         // Foráneas
         public required int idEstadoDisponibilidad { get; set; }
 
         // Relaciones
-        public required Estado estadoVeterinario { get; set; }
+        public Persona persona { get; set; } = null!;
+        public Estado estadoVeterinario { get; set; } = null!;
     }
 }

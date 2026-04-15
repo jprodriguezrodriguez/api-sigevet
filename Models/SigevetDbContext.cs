@@ -9,17 +9,17 @@ namespace sigevet.Models
 
         }
         // Catálogos
-        DbSet<TipoIdentificacion> TiposIdentificacion { get; set; }
-        DbSet<Estado> Estados { get; set; }
-        DbSet<TipoContacto> TiposContacto { get; set; }
-        DbSet<CategoriaEstado> CategoriasEstado { get; set; }
+        public DbSet<TipoIdentificacion> TiposIdentificacion { get; set; }
+        public DbSet<Estado> Estados { get; set; }
+        public DbSet<TipoContacto> TiposContacto { get; set; }
+        public DbSet<CategoriaEstado> CategoriasEstado { get; set; }
 
         // Entidades Principales
-        DbSet<Persona> Personas { get; set; }
-        DbSet<Contacto> Contactos { get; set; }
+        public DbSet<Persona> Personas { get; set; }
+        public DbSet<Contacto> Contactos { get; set; }
+        public DbSet<Veterinario> Veterinarios { get; set; } 
 
         // Ahora realizaremos la configuracion de los atributos que tienen una definicion especifica
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Configuración de los campos del catálogo: Tipos de Identificación
@@ -63,13 +63,11 @@ namespace sigevet.Models
             modelBuilder.Entity<Persona>().Property(persona => persona.numeroIdentificacion).IsRequired().HasMaxLength(20);
             modelBuilder.Entity<Persona>().Property(persona => persona.fechaNacimiento).IsRequired();
             modelBuilder.Entity<Persona>().Property(persona => persona.direccion).IsRequired().HasMaxLength(150);
-            
             // --- Foránea con TipoIdentificación
             modelBuilder.Entity<Persona>()
                 .HasOne(persona => persona.tipoIdentificacion) // Persona tiene un tipo de identificacion
                 .WithMany(tipoId => tipoId.personas) // Un tipo de identificación pertenece a muchas personas
-                .HasForeignKey(persona => persona.idTipoIidentificacion); // Nombre de la foránea en personas
-
+                .HasForeignKey(persona => persona.idTipoIdentificacion); // Nombre de la foránea en personas
             // --- Foránea con Estados
             modelBuilder.Entity<Persona>()
                 .HasOne(persona => persona.estadoPersona) // Persona tiene un Estado
@@ -79,20 +77,17 @@ namespace sigevet.Models
             // Configuración de los campos de la entidad Contacto
             modelBuilder.Entity<Contacto>().HasKey(contacto => contacto.idContacto);
             modelBuilder.Entity<Contacto>().Property(contacto => contacto.detalleContacto).IsRequired().HasMaxLength(100);
-
             // -- Foránea Contacto - TipoContacto
             modelBuilder.Entity<Contacto>()
                 .HasOne(contacto => contacto.tipoContacto) // Contacto tiene un tipo de contacto
                 .WithMany() // Un tipo de identificación pertenece a muchas personas
                 .HasForeignKey(contacto => contacto.idTipoContacto); // Nombre de la foránea en personas
-
             // -- Foránea Contacto - Persona
             modelBuilder.Entity<Contacto>()
                 .HasOne(contacto => contacto.persona) // Persona tiene un tipo de contacto
                 .WithMany(persona => persona.contactosPersona) // Una persona tiene muchos contactos
                 .HasForeignKey(contacto => contacto.idPersonaContacto)
                 .OnDelete(DeleteBehavior.ClientCascade); // Nombre de la foránea en Contacto
-
             // --- Foránea Contacto - Estados
             modelBuilder.Entity<Contacto>() 
                 .HasOne(contacto => contacto.estadoContacto) // Contacto tiene un Estado
@@ -100,8 +95,22 @@ namespace sigevet.Models
                 .HasForeignKey(contacto => contacto.idEstadoContacto); // Nombre de la foránea en Contacto
 
             // Configuración de los campos de la entidad Veterinario
-            modelBuilder.Entity<Veterinario>().HasKey(vet => vet.idPersona);
-            modelBuilder.Entity<Veterinario>().Property(vet => vet.numeroTarjetaProfesional).IsRequired().HasMaxLength(100);
+            modelBuilder.Entity<Veterinario>().HasKey(vet => vet.idPersonaVet);
+            modelBuilder.Entity<Veterinario>().Property(vet => vet.numeroTarjetaProfesional).IsRequired().HasMaxLength(50);
+            modelBuilder.Entity<Veterinario>().Property(vet => vet.fechaRegistroVeterinario).IsRequired();
+            modelBuilder.Entity<Veterinario>().Property(vet => vet.fechaActualizacionVeterinario).IsRequired();
+            // --- Foránea Veterinario - Persona
+            modelBuilder.Entity<Veterinario>()
+                .HasOne(vet => vet.persona) // Contacto tiene un Estado
+                .WithOne() // Un Estado puede pertenecer a muchos Contactos
+                .HasForeignKey<Veterinario>(vet => vet.idPersonaVet)
+                .OnDelete(DeleteBehavior.ClientCascade); // Nombre de la foránea en Contacto
+            // --- Foránea Veterinario - Estado
+            modelBuilder.Entity<Veterinario>()
+                .HasOne(vet => vet.persona) // Contacto tiene un Estado
+                .WithOne() // Un Estado puede pertenecer a muchos Contactos
+                .HasForeignKey<Veterinario>(vet => vet.idPersonaVet); // Nombre de la foránea en Contacto
+
         }
     }
 }

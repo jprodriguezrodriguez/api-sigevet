@@ -6,7 +6,7 @@
         public required String tipoIdentificacion { get; set; }
         public String? descripcion { get; set; }
 
-        public required ICollection<Persona> personas { get; set; }
+        public ICollection<Persona> personas { get; set; } = new List<Persona>();
 
         public void registrarTipoIdentificacion(String nombreTipoIdentificacion)
         {

@@ -11,9 +11,9 @@
         public int idEstadoContacto { get; set; }
 
         // Relaciones
-        public required Persona persona { get; set; }
-        public required TipoContacto tipoContacto { get; set; }
-        public required Estado estadoContacto { get; set; }
+        public Persona persona { get; set; } = null!;
+        public TipoContacto tipoContacto { get; set; } = null!;
+        public Estado estadoContacto { get; set; } = null!;
 
     }
 }
