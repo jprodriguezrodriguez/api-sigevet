@@ -6,7 +6,7 @@
         public required string especialidad { get; set; }
         public string? descripcion { get; set; }
         // Relaciones
-        public required ICollection<Veterinario> veterinariosPorEspecialidad { get; set; }
+        public ICollection<EspecialidadVeterinario> veterinariosPorEspecialidad { get; set; } = new List<EspecialidadVeterinario>();
 
     }
 }

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using sigevet.Models;
 
@@ -11,9 +12,11 @@ using sigevet.Models;
 namespace sigevet.Migrations
 {
     [DbContext(typeof(SigevetDbContext))]
-    partial class SigevetDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260424232622_TransctionalInventario")]
+    partial class TransctionalInventario
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,46 +24,6 @@ namespace sigevet.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("sigevet.Models.AlertaVacunacion", b =>
-                {
-                    b.Property<int>("idAlerta")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("idAlerta"));
-
-                    b.Property<DateTime>("fechaActualizacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("fechaCreacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateOnly>("fechaGeneracion")
-                        .HasColumnType("date");
-
-                    b.Property<DateOnly>("fechaProgramada")
-                        .HasColumnType("date");
-
-                    b.Property<int>("idTipoAlerta")
-                        .HasColumnType("int");
-
-                    b.Property<int>("idVacunacion")
-                        .HasColumnType("int");
-
-                    b.Property<string>("mensaje")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.HasKey("idAlerta");
-
-                    b.HasIndex("idTipoAlerta");
-
-                    b.HasIndex("idVacunacion");
-
-                    b.ToTable("AlertasVacunacion");
-                });
 
             modelBuilder.Entity("sigevet.Models.Brigada", b =>
                 {
@@ -113,41 +76,6 @@ namespace sigevet.Migrations
                     b.ToTable("Brigadas");
                 });
 
-            modelBuilder.Entity("sigevet.Models.BrigadaVeterinario", b =>
-                {
-                    b.Property<int>("idBrigadaVeterinario")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("idBrigadaVeterinario"));
-
-                    b.Property<DateTime>("fechaActualizacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("fechaCreacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("idBrigada")
-                        .HasColumnType("int");
-
-                    b.Property<int>("idRolParticipacion")
-                        .HasColumnType("int");
-
-                    b.Property<int>("idVeterinario")
-                        .HasColumnType("int");
-
-                    b.HasKey("idBrigadaVeterinario");
-
-                    b.HasIndex("idBrigada");
-
-                    b.HasIndex("idRolParticipacion");
-
-                    b.HasIndex("idVeterinario", "idBrigada", "idRolParticipacion")
-                        .IsUnique();
-
-                    b.ToTable("BrigadasVeterinario");
-                });
-
             modelBuilder.Entity("sigevet.Models.CategoriaEstado", b =>
                 {
                     b.Property<int>("idCategoriaEstado")
@@ -198,10 +126,10 @@ namespace sigevet.Migrations
                     b.Property<int>("idEstadoContacto")
                         .HasColumnType("int");
 
-                    b.Property<int?>("idLaboratorioContacto")
+                    b.Property<int>("idLabotarioContacto")
                         .HasColumnType("int");
 
-                    b.Property<int?>("idPersonaContacto")
+                    b.Property<int>("idPersonaContacto")
                         .HasColumnType("int");
 
                     b.Property<int>("idTipoContacto")
@@ -211,7 +139,7 @@ namespace sigevet.Migrations
 
                     b.HasIndex("idEstadoContacto");
 
-                    b.HasIndex("idLaboratorioContacto");
+                    b.HasIndex("idLabotarioContacto");
 
                     b.HasIndex("idPersonaContacto");
 
@@ -272,8 +200,7 @@ namespace sigevet.Migrations
 
                     b.HasIndex("idEspecialidad");
 
-                    b.HasIndex("idVeterinario", "idEspecialidad")
-                        .IsUnique();
+                    b.HasIndex("idVeterinario");
 
                     b.ToTable("EspecialidadesVeterinario");
                 });
@@ -304,45 +231,6 @@ namespace sigevet.Migrations
                     b.HasKey("idEspecie");
 
                     b.ToTable("Especies");
-                });
-
-            modelBuilder.Entity("sigevet.Models.EsquemaVacunacion", b =>
-                {
-                    b.Property<int>("idEsquemaVacunacion")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("idEsquemaVacunacion"));
-
-                    b.Property<int?>("edadMinimaDias")
-                        .HasColumnType("int");
-
-                    b.Property<string>("esquemaVacunacion")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("fechaActualizacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("fechaCreacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("idTipoVacuna")
-                        .HasColumnType("int");
-
-                    b.Property<int>("intervaloDias")
-                        .HasColumnType("int");
-
-                    b.Property<string>("observaciones")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("idEsquemaVacunacion");
-
-                    b.HasIndex("idTipoVacuna");
-
-                    b.ToTable("EsquemasVacunacion");
                 });
 
             modelBuilder.Entity("sigevet.Models.Estado", b =>
@@ -519,9 +407,9 @@ namespace sigevet.Migrations
                         .HasMaxLength(60)
                         .HasColumnType("nvarchar(60)");
 
-                    b.Property<decimal>("peso")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
+                    b.Property<double>("peso")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("float(10)");
 
                     b.Property<string>("seniasParticulares")
                         .IsRequired()
@@ -686,62 +574,6 @@ namespace sigevet.Migrations
                     b.HasIndex("idEspecie");
 
                     b.ToTable("Razas");
-                });
-
-            modelBuilder.Entity("sigevet.Models.RolParticipacion", b =>
-                {
-                    b.Property<int>("idRolParticipacion")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("idRolParticipacion"));
-
-                    b.Property<string>("descripcion")
-                        .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)");
-
-                    b.Property<DateTime>("fechaActualizacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("fechaCreacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("rolParticipacion")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("idRolParticipacion");
-
-                    b.ToTable("RolesParticipacion");
-                });
-
-            modelBuilder.Entity("sigevet.Models.TipoAlerta", b =>
-                {
-                    b.Property<int>("idTipoAlerta")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("idTipoAlerta"));
-
-                    b.Property<string>("alerta")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("descripcion")
-                        .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)");
-
-                    b.Property<DateTime>("fechaActualizacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("fechaCreacion")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("idTipoAlerta");
-
-                    b.ToTable("TiposAlerta");
                 });
 
             modelBuilder.Entity("sigevet.Models.TipoContacto", b =>
@@ -932,8 +764,7 @@ namespace sigevet.Migrations
 
                     b.HasIndex("idMascota");
 
-                    b.HasIndex("idPersonaTut", "idMascota")
-                        .IsUnique();
+                    b.HasIndex("idPersonaTut");
 
                     b.ToTable("TutoresMascota");
                 });
@@ -1016,52 +847,6 @@ namespace sigevet.Migrations
                     b.ToTable("Vacunas");
                 });
 
-            modelBuilder.Entity("sigevet.Models.Vacunacion", b =>
-                {
-                    b.Property<int>("idVacunacion")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("idVacunacion"));
-
-                    b.Property<decimal>("dosisAplicada")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
-
-                    b.Property<DateTime>("fechaActualizacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("fechaAplicacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("fechaCreacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("idMascota")
-                        .HasColumnType("int");
-
-                    b.Property<int>("idVacuna")
-                        .HasColumnType("int");
-
-                    b.Property<int>("numeroDosis")
-                        .HasColumnType("int");
-
-                    b.Property<string>("observaciones")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateOnly?>("proximaFecha")
-                        .HasColumnType("date");
-
-                    b.HasKey("idVacunacion");
-
-                    b.HasIndex("idMascota");
-
-                    b.HasIndex("idVacuna");
-
-                    b.ToTable("Vacunaciones");
-                });
-
             modelBuilder.Entity("sigevet.Models.Veterinario", b =>
                 {
                     b.Property<int>("idPersonaVet")
@@ -1088,25 +873,6 @@ namespace sigevet.Migrations
                     b.ToTable("Veterinarios");
                 });
 
-            modelBuilder.Entity("sigevet.Models.AlertaVacunacion", b =>
-                {
-                    b.HasOne("sigevet.Models.TipoAlerta", "tipoAlerta")
-                        .WithMany("alertasVacunacion")
-                        .HasForeignKey("idTipoAlerta")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("sigevet.Models.Vacunacion", "vacunaciones")
-                        .WithMany("alertasVacunacion")
-                        .HasForeignKey("idVacunacion")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("tipoAlerta");
-
-                    b.Navigation("vacunaciones");
-                });
-
             modelBuilder.Entity("sigevet.Models.Brigada", b =>
                 {
                     b.HasOne("sigevet.Models.Estado", "estadoBrigada")
@@ -1118,33 +884,6 @@ namespace sigevet.Migrations
                     b.Navigation("estadoBrigada");
                 });
 
-            modelBuilder.Entity("sigevet.Models.BrigadaVeterinario", b =>
-                {
-                    b.HasOne("sigevet.Models.Brigada", "brigadas")
-                        .WithMany("veterinariosBrigada")
-                        .HasForeignKey("idBrigada")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("sigevet.Models.RolParticipacion", "rolParticipacion")
-                        .WithMany("brigadasVeterinario")
-                        .HasForeignKey("idRolParticipacion")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("sigevet.Models.Veterinario", "veterinario")
-                        .WithMany("brigadasVeterinario")
-                        .HasForeignKey("idVeterinario")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("brigadas");
-
-                    b.Navigation("rolParticipacion");
-
-                    b.Navigation("veterinario");
-                });
-
             modelBuilder.Entity("sigevet.Models.Contacto", b =>
                 {
                     b.HasOne("sigevet.Models.Estado", "estadoContacto")
@@ -1154,13 +893,16 @@ namespace sigevet.Migrations
                         .IsRequired();
 
                     b.HasOne("sigevet.Models.Laboratorio", "laboratorio")
-                        .WithMany("contactosLaboratorio")
-                        .HasForeignKey("idLaboratorioContacto");
+                        .WithMany()
+                        .HasForeignKey("idLabotarioContacto")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("sigevet.Models.Persona", "persona")
                         .WithMany("contactosPersona")
                         .HasForeignKey("idPersonaContacto")
-                        .OnDelete(DeleteBehavior.ClientCascade);
+                        .OnDelete(DeleteBehavior.ClientCascade)
+                        .IsRequired();
 
                     b.HasOne("sigevet.Models.TipoContacto", "tipoContacto")
                         .WithMany()
@@ -1194,17 +936,6 @@ namespace sigevet.Migrations
                     b.Navigation("especialidad");
 
                     b.Navigation("veterinarios");
-                });
-
-            modelBuilder.Entity("sigevet.Models.EsquemaVacunacion", b =>
-                {
-                    b.HasOne("sigevet.Models.TipoVacuna", "tipoVacuna")
-                        .WithMany("esquemasVacunacion")
-                        .HasForeignKey("idTipoVacuna")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("tipoVacuna");
                 });
 
             modelBuilder.Entity("sigevet.Models.Estado", b =>
@@ -1404,25 +1135,6 @@ namespace sigevet.Migrations
                     b.Navigation("tipoVacuna");
                 });
 
-            modelBuilder.Entity("sigevet.Models.Vacunacion", b =>
-                {
-                    b.HasOne("sigevet.Models.Mascota", "mascota")
-                        .WithMany("vacunacionesMascota")
-                        .HasForeignKey("idMascota")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("sigevet.Models.Vacuna", "vacuna")
-                        .WithMany("vacunaciones")
-                        .HasForeignKey("idVacuna")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("mascota");
-
-                    b.Navigation("vacuna");
-                });
-
             modelBuilder.Entity("sigevet.Models.Veterinario", b =>
                 {
                     b.HasOne("sigevet.Models.Estado", "estadoVeterinario")
@@ -1445,8 +1157,6 @@ namespace sigevet.Migrations
             modelBuilder.Entity("sigevet.Models.Brigada", b =>
                 {
                     b.Navigation("movimientosInventarios");
-
-                    b.Navigation("veterinariosBrigada");
                 });
 
             modelBuilder.Entity("sigevet.Models.CategoriaEstado", b =>
@@ -1474,16 +1184,9 @@ namespace sigevet.Migrations
                     b.Navigation("movimientosInventario");
                 });
 
-            modelBuilder.Entity("sigevet.Models.Laboratorio", b =>
-                {
-                    b.Navigation("contactosLaboratorio");
-                });
-
             modelBuilder.Entity("sigevet.Models.Mascota", b =>
                 {
                     b.Navigation("tutoresMascota");
-
-                    b.Navigation("vacunacionesMascota");
                 });
 
             modelBuilder.Entity("sigevet.Models.Persona", b =>
@@ -1491,24 +1194,9 @@ namespace sigevet.Migrations
                     b.Navigation("contactosPersona");
                 });
 
-            modelBuilder.Entity("sigevet.Models.RolParticipacion", b =>
-                {
-                    b.Navigation("brigadasVeterinario");
-                });
-
-            modelBuilder.Entity("sigevet.Models.TipoAlerta", b =>
-                {
-                    b.Navigation("alertasVacunacion");
-                });
-
             modelBuilder.Entity("sigevet.Models.TipoIdentificacion", b =>
                 {
                     b.Navigation("personas");
-                });
-
-            modelBuilder.Entity("sigevet.Models.TipoVacuna", b =>
-                {
-                    b.Navigation("esquemasVacunacion");
                 });
 
             modelBuilder.Entity("sigevet.Models.Tutor", b =>
@@ -1516,20 +1204,8 @@ namespace sigevet.Migrations
                     b.Navigation("mascotasPorTutor");
                 });
 
-            modelBuilder.Entity("sigevet.Models.Vacuna", b =>
-                {
-                    b.Navigation("vacunaciones");
-                });
-
-            modelBuilder.Entity("sigevet.Models.Vacunacion", b =>
-                {
-                    b.Navigation("alertasVacunacion");
-                });
-
             modelBuilder.Entity("sigevet.Models.Veterinario", b =>
                 {
-                    b.Navigation("brigadasVeterinario");
-
                     b.Navigation("especialidadesPorVeterinario");
                 });
 #pragma warning restore 612, 618

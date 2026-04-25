@@ -5,15 +5,17 @@
         public int idContacto {  get; set; }
         public required String detalleContacto { get; set; }
 
-        // Nombre llaves foráneas
-        public int idPersonaContacto { get; set; }
+        // Foráneas
+        public int? idPersonaContacto { get; set; }
+        public int? idLaboratorioContacto { get; set; }
         public int idTipoContacto { get; set; }
         public int idEstadoContacto { get; set; }
 
         // Relaciones
-        public required Persona persona { get; set; }
-        public required TipoContacto tipoContacto { get; set; }
-        public required Estado estadoContacto { get; set; }
+        public Persona? persona { get; set; }
+        public Laboratorio? laboratorio { get; set; }
+        public TipoContacto tipoContacto { get; set; } = null!;
+        public Estado estadoContacto { get; set; } = null!;
 
     }
 }

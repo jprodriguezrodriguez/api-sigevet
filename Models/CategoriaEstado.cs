@@ -2,7 +2,7 @@
 {
     public class CategoriaEstado: Auditable
     {
-        public required int idCategoriaEstado {  get; set; }
+        public int idCategoriaEstado {  get; set; }
         public required string categoriaEstado { get; set; }
         public string? descripcion { get; set; }
 

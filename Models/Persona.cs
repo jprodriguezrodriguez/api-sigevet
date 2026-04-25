@@ -14,13 +14,13 @@ namespace sigevet.Models
         public required String direccion { get; set; }
 
         // Nombre de las foráneas
-        public int idTipoIidentificacion { get; set; }
+        public int idTipoIdentificacion { get; set; }
         public int idEstadoPersona { get; set; }
 
         // Relaciones
-        public required TipoIdentificacion tipoIdentificacion { get; set; }
-        public required Estado estadoPersona { get; set; }
-        public required ICollection<Contacto> contactosPersona { get; set; } = new List<Contacto>();
+        public TipoIdentificacion tipoIdentificacion { get; set; } = null!;
+        public Estado estadoPersona { get; set; } = null!;
+        public ICollection<Contacto> contactosPersona { get; set; } = new List<Contacto>();
 
     }
 }
