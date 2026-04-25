@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using sigevet.Models;
 
@@ -11,9 +12,11 @@ using sigevet.Models;
 namespace sigevet.Migrations
 {
     [DbContext(typeof(SigevetDbContext))]
-    partial class SigevetDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260425022230_AlertaVacunacion")]
+    partial class AlertaVacunacion
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -29,12 +32,6 @@ namespace sigevet.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("idAlerta"));
-
-                    b.Property<DateTime>("fechaActualizacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("fechaCreacion")
-                        .HasColumnType("datetime2");
 
                     b.Property<DateOnly>("fechaGeneracion")
                         .HasColumnType("date");
@@ -142,8 +139,7 @@ namespace sigevet.Migrations
 
                     b.HasIndex("idRolParticipacion");
 
-                    b.HasIndex("idVeterinario", "idBrigada", "idRolParticipacion")
-                        .IsUnique();
+                    b.HasIndex("idVeterinario");
 
                     b.ToTable("BrigadasVeterinario");
                 });
@@ -198,10 +194,10 @@ namespace sigevet.Migrations
                     b.Property<int>("idEstadoContacto")
                         .HasColumnType("int");
 
-                    b.Property<int?>("idLaboratorioContacto")
+                    b.Property<int>("idLabotarioContacto")
                         .HasColumnType("int");
 
-                    b.Property<int?>("idPersonaContacto")
+                    b.Property<int>("idPersonaContacto")
                         .HasColumnType("int");
 
                     b.Property<int>("idTipoContacto")
@@ -211,7 +207,7 @@ namespace sigevet.Migrations
 
                     b.HasIndex("idEstadoContacto");
 
-                    b.HasIndex("idLaboratorioContacto");
+                    b.HasIndex("idLabotarioContacto");
 
                     b.HasIndex("idPersonaContacto");
 
@@ -272,8 +268,7 @@ namespace sigevet.Migrations
 
                     b.HasIndex("idEspecialidad");
 
-                    b.HasIndex("idVeterinario", "idEspecialidad")
-                        .IsUnique();
+                    b.HasIndex("idVeterinario");
 
                     b.ToTable("EspecialidadesVeterinario");
                 });
@@ -519,9 +514,9 @@ namespace sigevet.Migrations
                         .HasMaxLength(60)
                         .HasColumnType("nvarchar(60)");
 
-                    b.Property<decimal>("peso")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
+                    b.Property<double>("peso")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("float(10)");
 
                     b.Property<string>("seniasParticulares")
                         .IsRequired()
@@ -932,8 +927,7 @@ namespace sigevet.Migrations
 
                     b.HasIndex("idMascota");
 
-                    b.HasIndex("idPersonaTut", "idMascota")
-                        .IsUnique();
+                    b.HasIndex("idPersonaTut");
 
                     b.ToTable("TutoresMascota");
                 });
@@ -1154,13 +1148,16 @@ namespace sigevet.Migrations
                         .IsRequired();
 
                     b.HasOne("sigevet.Models.Laboratorio", "laboratorio")
-                        .WithMany("contactosLaboratorio")
-                        .HasForeignKey("idLaboratorioContacto");
+                        .WithMany()
+                        .HasForeignKey("idLabotarioContacto")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("sigevet.Models.Persona", "persona")
                         .WithMany("contactosPersona")
                         .HasForeignKey("idPersonaContacto")
-                        .OnDelete(DeleteBehavior.ClientCascade);
+                        .OnDelete(DeleteBehavior.ClientCascade)
+                        .IsRequired();
 
                     b.HasOne("sigevet.Models.TipoContacto", "tipoContacto")
                         .WithMany()
@@ -1472,11 +1469,6 @@ namespace sigevet.Migrations
             modelBuilder.Entity("sigevet.Models.Inventario", b =>
                 {
                     b.Navigation("movimientosInventario");
-                });
-
-            modelBuilder.Entity("sigevet.Models.Laboratorio", b =>
-                {
-                    b.Navigation("contactosLaboratorio");
                 });
 
             modelBuilder.Entity("sigevet.Models.Mascota", b =>

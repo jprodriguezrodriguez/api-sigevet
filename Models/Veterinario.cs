@@ -13,5 +13,7 @@
         // Relaciones
         public Persona persona { get; set; } = null!;
         public Estado estadoVeterinario { get; set; } = null!;
+        public ICollection<EspecialidadVeterinario> especialidadesPorVeterinario { get; set; } = new List<EspecialidadVeterinario>();
+        public ICollection<BrigadaVeterinario> brigadasVeterinario { get; set; } = new List<BrigadaVeterinario>();
     }
 }
