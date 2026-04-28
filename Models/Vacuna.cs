@@ -14,9 +14,9 @@
         public int idEstadoVacuna { get; set; }
 
         // Relaciones
-        public TipoVacuna tipoVacuna { get; set; } = null!;
-        public Laboratorio laboratorio { get; set; } = null!;
-        public Estado estadoVacuna { get; set; } = null!;
+        public TipoVacuna? tipoVacuna { get; set; }
+        public Laboratorio? laboratorio { get; set; }
+        public Estado? estadoVacuna { get; set; }
         public ICollection<Vacunacion> vacunaciones { get; set; } = new List<Vacunacion>();
 
     }

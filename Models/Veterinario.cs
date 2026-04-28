@@ -11,8 +11,8 @@
         public required int idEstadoDisponibilidad { get; set; }
 
         // Relaciones
-        public Persona persona { get; set; } = null!;
-        public Estado estadoVeterinario { get; set; } = null!;
+        public Persona? persona { get; set; }
+        public Estado? estadoVeterinario { get; set; }
         public ICollection<EspecialidadVeterinario> especialidadesPorVeterinario { get; set; } = new List<EspecialidadVeterinario>();
         public ICollection<BrigadaVeterinario> brigadasVeterinario { get; set; } = new List<BrigadaVeterinario>();
     }

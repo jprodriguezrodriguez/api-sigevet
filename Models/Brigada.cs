@@ -15,7 +15,7 @@
         public int idEstadoBrigada { get; set; }
 
         // Relaciones
-        public Estado estadoBrigada { get; set; } = null!;
+        public Estado? estadoBrigada { get; set; } = null!;
         public ICollection<MovimientoInventario> movimientosInventarios { get; set; } = new List<MovimientoInventario>();
         public ICollection<BrigadaVeterinario> veterinariosBrigada { get; set; } = new List<BrigadaVeterinario>();
     }

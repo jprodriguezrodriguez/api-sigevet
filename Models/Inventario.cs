@@ -12,7 +12,7 @@ namespace sigevet.Models
         public int idInsumoSanitario { get; set; }
 
         // Relaciones
-        public InsumoSanitario insumoSanitario { get; set; } = null!;
+        public InsumoSanitario? insumoSanitario { get; set; }
         public ICollection<MovimientoInventario> movimientosInventario { get; set; } = new List<MovimientoInventario>();
     }
 }

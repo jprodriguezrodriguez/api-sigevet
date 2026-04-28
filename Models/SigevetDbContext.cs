@@ -223,7 +223,7 @@ namespace sigevet.Models
             modelBuilder.Entity<Mascota>().Property(mas => mas.sexo).IsRequired().HasMaxLength(1);
             modelBuilder.Entity<Mascota>().Property(mas => mas.color).IsRequired().HasMaxLength(20);
             modelBuilder.Entity<Mascota>().Property(mas => mas.peso).IsRequired().HasPrecision(5,2);
-            modelBuilder.Entity<Mascota>().Property(mas => mas.seniasParticulares).IsRequired().HasMaxLength(20);
+            modelBuilder.Entity<Mascota>().Property(mas => mas.seniasParticulares).IsRequired().HasMaxLength(200);
             // --- Foranea Mascota - Raza
             modelBuilder.Entity<Mascota>()
                 .HasOne(mas => mas.raza)

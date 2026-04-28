@@ -12,9 +12,9 @@
         public int idEstadoInsumo { get; set; }
 
         // Relaciones
-        public TipoInsumo tipoInsumo { get; set; } = null!;
-        public UnidadMedida unidadMedida { get; set; } = null!;
-        public Estado estadoInsumo { get; set; } = null!;
+        public TipoInsumo? tipoInsumo { get; set; } 
+        public UnidadMedida? unidadMedida { get; set; }
+        public Estado? estadoInsumo { get; set; }
 
         public ICollection<Inventario> inventarios { get; set; } = new List<Inventario>();
     }

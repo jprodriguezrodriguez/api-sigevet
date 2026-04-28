@@ -15,8 +15,8 @@
         public int idEstadoMascota { get; set; }
 
         // Relaciones
-        public Raza raza { get; set; } = null!;
-        public Estado estadoMascota { get; set; } = null!;
+        public Raza? raza { get; set; }
+        public Estado? estadoMascota { get; set; }
 
         public ICollection<TutorMascota> tutoresMascota { get; set; } = new List<TutorMascota>();
         public ICollection<Vacunacion> vacunacionesMascota { get; set; } = new List<Vacunacion>();

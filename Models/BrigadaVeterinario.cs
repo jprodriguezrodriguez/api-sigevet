@@ -10,8 +10,8 @@
         public int idRolParticipacion { get; set; }
 
         // Relaciones
-        public Veterinario veterinario { get; set; } = null!;
-        public Brigada brigadas { get; set; } = null!;
-        public RolParticipacion rolParticipacion { get; set;} = null!;
+        public Veterinario? veterinario { get; set; }
+        public Brigada? brigadas { get; set; }
+        public RolParticipacion? rolParticipacion { get; set;}
     }
 }

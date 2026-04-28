@@ -9,7 +9,7 @@
         public int idMascota { get; set; }
 
         // Relaciones
-        public Tutor tutor { get; set; } = null!;
-        public Mascota mascota { get; set; } = null!;
+        public Tutor? tutor { get; set; }
+        public Mascota? mascota { get; set; }
     }
 }

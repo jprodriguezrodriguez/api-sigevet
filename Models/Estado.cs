@@ -10,7 +10,7 @@
         public int idCategoriaEstado {  get; set; }
 
         // Relación con Categoría
-        public required CategoriaEstado categoriaEstado { get; set; }
+        public CategoriaEstado? categoriaEstado { get; set; }
 
         public void registrarEstado(String nombreEstado) { }
 

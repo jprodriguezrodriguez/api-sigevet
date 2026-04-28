@@ -11,8 +11,8 @@
         public required int idEstadoCuentaTutor { get; set; }
 
         // Relaciones
-        public Persona persona { get; set; } = null!;
-        public Estado estadoCuenta { get; set; } = null!;
+        public Persona? persona { get; set; }
+        public Estado? estadoCuenta { get; set; }
         public ICollection<TutorMascota> mascotasPorTutor { get; set; } = new List<TutorMascota>();
     }
 }

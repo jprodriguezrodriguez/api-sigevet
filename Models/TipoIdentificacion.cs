@@ -12,8 +12,6 @@
         {
         }
 
-        public void actualizarTipoIdentificacion(int idTipoIdentificacion)
-        {
-        }
+        public void actualizarTipoIdentificacion(int idTipoIdentificacion) { }
     }
 }

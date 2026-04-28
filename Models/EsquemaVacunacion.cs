@@ -14,6 +14,6 @@ namespace sigevet.Models
         public int idTipoVacuna { get; set; }
 
         // Relaciones
-        public TipoVacuna tipoVacuna { get; set; } = null!;
+        public TipoVacuna? tipoVacuna { get; set; }
     }
 }

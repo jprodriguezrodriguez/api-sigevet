@@ -18,8 +18,8 @@ namespace sigevet.Models
         public int idEstadoPersona { get; set; }
 
         // Relaciones
-        public TipoIdentificacion tipoIdentificacion { get; set; } = null!;
-        public Estado estadoPersona { get; set; } = null!;
+        public TipoIdentificacion? tipoIdentificacion { get; set; }
+        public Estado? estadoPersona { get; set; }
         public ICollection<Contacto> contactosPersona { get; set; } = new List<Contacto>();
 
     }

@@ -8,8 +8,8 @@
         public int idEspecialidad { get; set; }
 
         // Relaciones
-        public Veterinario veterinarios {  get; set; } = null!;
-        public Especialidad especialidad { get; set; } = null!;
+        public Veterinario? veterinarios {  get; set; }
+        public Especialidad? especialidad { get; set; }
 
     }
 }

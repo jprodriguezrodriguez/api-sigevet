@@ -14,8 +14,8 @@
         // Relaciones
         public Persona? persona { get; set; }
         public Laboratorio? laboratorio { get; set; }
-        public TipoContacto tipoContacto { get; set; } = null!;
-        public Estado estadoContacto { get; set; } = null!;
+        public TipoContacto? tipoContacto { get; set; }
+        public Estado? estadoContacto { get; set; }
 
     }
 }

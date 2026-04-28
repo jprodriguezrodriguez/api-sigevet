@@ -14,8 +14,8 @@
         public int idMascota { get; set; }
 
         // Relaciones
-        public Vacuna vacuna { get; set; } = null!;
-        public Mascota mascota { get; set; } = null!;
+        public Vacuna? vacuna { get; set; }
+        public Mascota? mascota { get; set; }
         public ICollection<AlertaVacunacion> alertasVacunacion = new List<AlertaVacunacion>();
     }
 }
