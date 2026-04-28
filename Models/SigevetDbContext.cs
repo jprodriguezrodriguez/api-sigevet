@@ -362,11 +362,11 @@ namespace sigevet.Models
             modelBuilder.Entity<Vacunacion>().Property(vac => vac.numeroDosis).IsRequired();
             modelBuilder.Entity<Vacunacion>().Property(vac => vac.observaciones).HasMaxLength(200);
             modelBuilder.Entity<Vacunacion>().Property(vac => vac.proximaFecha);
-            // --- Foránea Vacunacion - Vacuna
+            // --- Foránea Esquema Vacunacion - Vacuna
             modelBuilder.Entity<Vacunacion>()
-                .HasOne(vac => vac.vacuna)
+                .HasOne(vac => vac.esquemaVacunacion)
                 .WithMany(vacn => vacn.vacunaciones)
-                .HasForeignKey(vac => vac.idVacuna)
+                .HasForeignKey(vac => vac.idEsquemaVacunacion)
                 .OnDelete(DeleteBehavior.Restrict);
             // --- Foránea Vacunacion - Mascota
             modelBuilder.Entity<Vacunacion>()

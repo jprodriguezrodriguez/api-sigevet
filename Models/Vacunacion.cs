@@ -10,11 +10,11 @@
         public DateOnly? proximaFecha {  get; set; }
 
         // Foráneas
-        public int idVacuna { get; set; }
+        public int idEsquemaVacunacion { get; set; }
         public int idMascota { get; set; }
 
         // Relaciones
-        public Vacuna? vacuna { get; set; }
+        public EsquemaVacunacion? esquemaVacunacion { get; set; }
         public Mascota? mascota { get; set; }
         public ICollection<AlertaVacunacion> alertasVacunacion = new List<AlertaVacunacion>();
     }

@@ -15,5 +15,7 @@ namespace sigevet.Models
 
         // Relaciones
         public TipoVacuna? tipoVacuna { get; set; }
+
+        public ICollection<Vacunacion> vacunaciones { get; set; } = new List<Vacunacion>();
     }
 }

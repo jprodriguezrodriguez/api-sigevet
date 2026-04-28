@@ -17,7 +17,6 @@
         public TipoVacuna? tipoVacuna { get; set; }
         public Laboratorio? laboratorio { get; set; }
         public Estado? estadoVacuna { get; set; }
-        public ICollection<Vacunacion> vacunaciones { get; set; } = new List<Vacunacion>();
 
     }
 }
