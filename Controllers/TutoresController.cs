@@ -24,7 +24,10 @@ namespace sigevet.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Tutor>>> GetTutores()
         {
-            return await _context.Tutores.ToListAsync();
+            return await _context.Tutores
+                .Include(t => t.persona)
+                .Include(t => t.estadoCuenta)
+                .ToListAsync();
         }
 
         // GET: api/Tutores/5
