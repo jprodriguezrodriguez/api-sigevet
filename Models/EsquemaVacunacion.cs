@@ -1,4 +1,5 @@
 ﻿using Microsoft.OpenApi.Writers;
+using System.Text.Json.Serialization;
 
 namespace sigevet.Models
 {
@@ -15,7 +16,7 @@ namespace sigevet.Models
 
         // Relaciones
         public TipoVacuna? tipoVacuna { get; set; }
-
+        [JsonIgnore]
         public ICollection<Vacunacion> vacunaciones { get; set; } = new List<Vacunacion>();
     }
 }

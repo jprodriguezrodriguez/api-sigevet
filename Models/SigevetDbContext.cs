@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Runtime.Intrinsics.Arm;
+using sigevet.Models;
 
 namespace sigevet.Models
 {
@@ -22,6 +23,7 @@ namespace sigevet.Models
         public DbSet<RolParticipacion> RolesParticipacion { get; set; }
         public DbSet<EsquemaVacunacion> EsquemasVacunacion { get; set; }
         public DbSet<TipoAlerta> TiposAlerta { get; set; }
+        public DbSet<Roles> Roles { get; set; }
 
         // Entidades Principales
         public DbSet<Persona> Personas { get; set; }
@@ -36,12 +38,56 @@ namespace sigevet.Models
         public DbSet<InsumoSanitario> InsumosSanitarios { get; set; }
         public DbSet<Vacunacion> Vacunaciones {  get; set; }
         public DbSet<AlertaVacunacion> AlertasVacunacion { get; set; }
+        public DbSet<CuentasUsuarios> CuentasUsuarios { get; set; }
+        public DbSet<TokensCuentas> TokensCuentas { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         // Tablas Intermedias
         public DbSet<EspecialidadVeterinario> EspecialidadesVeterinario { get; set; }
         public DbSet<TutorMascota> TutoresMascota { get; set; }
         public DbSet<BrigadaVeterinario> BrigadasVeterinario { get; set; }
 
+        private void SetAuditDates()
+        {
+            var entries = ChangeTracker.Entries<Auditable>();
+            var utcNow = DateTime.UtcNow;
+            foreach (var entry in entries)
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    entry.Entity.fechaCreacion = utcNow;
+                    entry.Entity.fechaActualizacion = utcNow;
+                }
+                else if (entry.State == EntityState.Modified)
+                {
+                    entry.Entity.fechaActualizacion = utcNow;
+                }
+            }
+        }
+
+        public override int SaveChanges()
+        {
+            SetAuditDates();
+            return base.SaveChanges();
+        }
+
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            SetAuditDates();
+            return base.SaveChanges(acceptAllChangesOnSuccess);
+        }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            SetAuditDates();
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        {
+            SetAuditDates();
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }
 
         // Configuracion de los atributos de las Entidades
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -134,6 +180,11 @@ namespace sigevet.Models
             modelBuilder.Entity<TipoAlerta>().Property(tAler => tAler.alerta).IsRequired().HasMaxLength(50);
             modelBuilder.Entity<TipoAlerta>().Property(tAler => tAler.descripcion).HasMaxLength(120);
 
+            // Configuración de los campos del catálogo: Roles
+            modelBuilder.Entity<Roles>().HasKey(tipoRol => tipoRol.idRol);
+            modelBuilder.Entity<Roles>().Property(tipoRol => tipoRol.rolUsuario).IsRequired().HasMaxLength(50);
+            modelBuilder.Entity<Roles>().HasIndex(tipoRol => tipoRol.rolUsuario).IsUnique();
+            modelBuilder.Entity<Roles>().Property(tipoRol => tipoRol.descripcion).HasMaxLength(120);
 
             // --- [CONFIGURACION DE ENTIDADES PRINCIPALES]
             // Configuración de los campos de la entidad Personas
@@ -211,9 +262,9 @@ namespace sigevet.Models
                 .OnDelete(DeleteBehavior.ClientCascade);
             // --- Foranea Tutor - Estado
             modelBuilder.Entity<Tutor>()
-                .HasOne(tut => tut.estadoCuenta)
+                .HasOne(tut => tut.estadoTutor)
                 .WithMany()
-                .HasForeignKey(tut => tut.idEstadoCuentaTutor)
+                .HasForeignKey(tut => tut.idEstadoTutor)
                 .OnDelete(DeleteBehavior.ClientCascade);
 
             // Configuración de los campos de la entidad Mascota
@@ -374,6 +425,12 @@ namespace sigevet.Models
                 .WithMany(mas => mas.vacunacionesMascota)
                 .HasForeignKey(vac => vac.idMascota)
                 .OnDelete(DeleteBehavior.Restrict);
+            // --- Foránea Vacunacion - UnidadMedida
+            modelBuilder.Entity<Vacunacion>()
+                .HasOne(v => v.unidadMedida)
+                .WithMany()
+                .HasForeignKey(v => v.idUnidadMedida)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Configuración de los campos de la entidad AlertaVacunacion
             modelBuilder.Entity<AlertaVacunacion>().HasKey(aler => aler.idAlerta);
@@ -393,6 +450,60 @@ namespace sigevet.Models
                 .HasForeignKey(aler => aler.idVacunacion)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Configuración de los campos de la entidad CuentasUsuario
+            modelBuilder.Entity<CuentasUsuarios>().HasKey(cuUsu => cuUsu.idCuentaUsuario);
+            modelBuilder.Entity<CuentasUsuarios>().Property(cuUsu => cuUsu.username).IsRequired().HasMaxLength(50); ;
+            modelBuilder.Entity<CuentasUsuarios>().HasIndex(cuUsu => cuUsu.username).IsUnique();
+            modelBuilder.Entity<CuentasUsuarios>().Property(cuUsu => cuUsu.passwordHash).IsRequired().HasMaxLength(255);
+            modelBuilder.Entity<CuentasUsuarios>().Property(cuUsu => cuUsu.ultimoInicioSesion);
+            modelBuilder.Entity<CuentasUsuarios>().Property(cuUsu => cuUsu.intentosFallidos);
+            modelBuilder.Entity<CuentasUsuarios>().Property(cuUsu => cuUsu.fechaDesbloqueo);
+            // --- Foránea CuentasUsuario - Persona
+            modelBuilder.Entity<CuentasUsuarios>()
+                .HasOne(cuUsu => cuUsu.persona)
+                .WithOne()
+                .HasForeignKey<CuentasUsuarios>(cuUsu => cuUsu.idPersona)
+                .OnDelete(DeleteBehavior.Restrict);
+            // --- Foránea CuentasUsuario - EstadoCuenta
+            modelBuilder.Entity<CuentasUsuarios>()
+                .HasOne(cuUsu => cuUsu.estadoCuenta)
+                .WithMany()
+                .HasForeignKey(cuUsu => cuUsu.idEstadoCuenta)
+                .OnDelete(DeleteBehavior.Restrict);
+            // --- Foránea CuentasUsuario - Rol
+            modelBuilder.Entity<CuentasUsuarios>()
+                .HasOne(cuUsu => cuUsu.rolesUsuario)
+                .WithMany(rol => rol.cuentasUsuariosPorRol)
+                .HasForeignKey(cuUsu => cuUsu.idRol)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Configuración de los campos de la entidad TokensCuentas
+            modelBuilder.Entity<TokensCuentas>().HasKey(cuUsu => cuUsu.idToken);
+            modelBuilder.Entity<TokensCuentas>().Property(cuUsu => cuUsu.tokenHash).IsRequired().HasMaxLength(255);
+            modelBuilder.Entity<TokensCuentas>().Property(cuUsu => cuUsu.fechaExpiracion);
+            modelBuilder.Entity<TokensCuentas>().Property(cuUsu => cuUsu.fechaUso);
+            modelBuilder.Entity<TokensCuentas>().Property(cuUsu => cuUsu.usado);
+            // --- Foránea TokensCuentas - Persona
+            modelBuilder.Entity<TokensCuentas>()
+                .HasOne(token => token.tokenCuentaUsuario)
+                .WithMany(cu => cu.tokensCuentas)
+                .HasForeignKey(token => token.idCuentaUsuario)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Configuración de los campos de la entidad RefreshToken
+            modelBuilder.Entity<RefreshToken>().HasKey(rt => rt.idRefreshToken);
+            modelBuilder.Entity<RefreshToken>().Property(rt => rt.tokenHash).IsRequired().HasMaxLength(255);
+            modelBuilder.Entity<RefreshToken>().Property(rt => rt.fechaCreacion);
+            modelBuilder.Entity<RefreshToken>().Property(rt => rt.fechaExpiracion);
+            modelBuilder.Entity<RefreshToken>().Property(rt => rt.fechaRevocacion);
+            modelBuilder.Entity<RefreshToken>().Property(rt => rt.ip).HasMaxLength(45);
+            modelBuilder.Entity<RefreshToken>().Property(rt => rt.userAgent).HasMaxLength(255);
+            // --- Foránea RefreshToken - Persona
+            modelBuilder.Entity<RefreshToken>()
+                .HasOne(rt => rt.tokensPorCuentaUsuario)
+                .WithMany(cu => cu.refreshTokens)
+                .HasForeignKey(rt => rt.idCuentaUsuario)
+                .OnDelete(DeleteBehavior.Restrict);
 
 
             // --- [CONFIGURACION TABLAS INTERMEDIAS]
@@ -456,5 +567,6 @@ namespace sigevet.Models
                 .HasIndex(bv => new { bv.idVeterinario, bv.idBrigada, bv.idRolParticipacion })
                 .IsUnique();
         }
+        public DbSet<sigevet.Models.MovimientoInventario> MovimientoInventario { get; set; } = default!;
     }
 }

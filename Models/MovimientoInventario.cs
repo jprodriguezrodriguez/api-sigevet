@@ -15,9 +15,9 @@
         public int? idBrigada { get; set; }
 
         // Relaciones
-        public TipoMovimiento tipoMovimiento { get; set; } = null!;
-        public Persona responsableMovimiento { get; set; } = null!;
-        public Inventario inventario {  get; set; } = null!;
+        public TipoMovimiento? tipoMovimiento { get; set; }
+        public Persona? responsableMovimiento { get; set; }
+        public Inventario? inventario {  get; set; }
         public Brigada? brigada { get; set; } 
     }
 }

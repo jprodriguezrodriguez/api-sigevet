@@ -26,7 +26,7 @@ namespace sigevet.Controllers
         {
             return await _context.Tutores
                 .Include(t => t.persona)
-                .Include(t => t.estadoCuenta)
+                .Include(t => t.estadoTutor)
                 .ToListAsync();
         }
 

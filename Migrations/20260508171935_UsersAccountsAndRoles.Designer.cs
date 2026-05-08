@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using sigevet.Models;
 
@@ -11,9 +12,11 @@ using sigevet.Models;
 namespace sigevet.Migrations
 {
     [DbContext(typeof(SigevetDbContext))]
-    partial class SigevetDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260508171935_UsersAccountsAndRoles")]
+    partial class UsersAccountsAndRoles
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -745,46 +748,6 @@ namespace sigevet.Migrations
                     b.ToTable("Razas");
                 });
 
-            modelBuilder.Entity("sigevet.Models.RefreshToken", b =>
-                {
-                    b.Property<int>("idRefreshToken")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("idRefreshToken"));
-
-                    b.Property<DateTime>("fechaCreacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("fechaExpiracion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("fechaRevocacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("idCuentaUsuario")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ip")
-                        .HasMaxLength(45)
-                        .HasColumnType("nvarchar(45)");
-
-                    b.Property<string>("tokenHash")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("userAgent")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.HasKey("idRefreshToken");
-
-                    b.HasIndex("idCuentaUsuario");
-
-                    b.ToTable("RefreshTokens");
-                });
-
             modelBuilder.Entity("sigevet.Models.RolParticipacion", b =>
                 {
                     b.Property<int>("idRolParticipacion")
@@ -1010,44 +973,6 @@ namespace sigevet.Migrations
                     b.HasKey("idTipoVacuna");
 
                     b.ToTable("TiposVacuna");
-                });
-
-            modelBuilder.Entity("sigevet.Models.TokensCuentas", b =>
-                {
-                    b.Property<int>("idToken")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("idToken"));
-
-                    b.Property<DateTime?>("fechaActualizacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("fechaCreacion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("fechaExpiracion")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("fechaUso")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("idCuentaUsuario")
-                        .HasColumnType("int");
-
-                    b.Property<string>("tokenHash")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<bool>("usado")
-                        .HasColumnType("bit");
-
-                    b.HasKey("idToken");
-
-                    b.HasIndex("idCuentaUsuario");
-
-                    b.ToTable("TokensCuentas");
                 });
 
             modelBuilder.Entity("sigevet.Models.Tutor", b =>
@@ -1537,28 +1462,6 @@ namespace sigevet.Migrations
                     b.Navigation("especie");
                 });
 
-            modelBuilder.Entity("sigevet.Models.RefreshToken", b =>
-                {
-                    b.HasOne("sigevet.Models.CuentasUsuarios", "tokensPorCuentaUsuario")
-                        .WithMany("refreshTokens")
-                        .HasForeignKey("idCuentaUsuario")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("tokensPorCuentaUsuario");
-                });
-
-            modelBuilder.Entity("sigevet.Models.TokensCuentas", b =>
-                {
-                    b.HasOne("sigevet.Models.CuentasUsuarios", "tokenCuentaUsuario")
-                        .WithMany("tokensCuentas")
-                        .HasForeignKey("idCuentaUsuario")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("tokenCuentaUsuario");
-                });
-
             modelBuilder.Entity("sigevet.Models.Tutor", b =>
                 {
                     b.HasOne("sigevet.Models.Estado", "estadoTutor")
@@ -1680,13 +1583,6 @@ namespace sigevet.Migrations
             modelBuilder.Entity("sigevet.Models.CategoriaEstado", b =>
                 {
                     b.Navigation("estadosPorCategoria");
-                });
-
-            modelBuilder.Entity("sigevet.Models.CuentasUsuarios", b =>
-                {
-                    b.Navigation("refreshTokens");
-
-                    b.Navigation("tokensCuentas");
                 });
 
             modelBuilder.Entity("sigevet.Models.Especialidad", b =>

@@ -8,11 +8,11 @@
         public DateTime fechaActualizacionTutor { get; set; } = DateTime.Now;
 
         // Foráneas
-        public required int idEstadoCuentaTutor { get; set; }
+        public required int idEstadoTutor { get; set; }
 
         // Relaciones
         public Persona? persona { get; set; }
-        public Estado? estadoCuenta { get; set; }
+        public Estado? estadoTutor { get; set; }
         public ICollection<TutorMascota> mascotasPorTutor { get; set; } = new List<TutorMascota>();
     }
 }

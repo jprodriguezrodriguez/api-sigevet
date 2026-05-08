@@ -75,12 +75,56 @@ namespace sigevet.Controllers
         // POST: api/Vacunaciones
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Vacunacion>> PostVacunacion(Vacunacion vacunacion)
+        public async Task<ActionResult> PostVacunacion(Vacunacion vacunacion)
         {
+            var esquema = await _context.EsquemasVacunacion
+                .FirstOrDefaultAsync(e => e.idEsquemaVacunacion == vacunacion.idEsquemaVacunacion);
+
+            if (esquema == null)
+            {
+                return NotFound($"No existe un esquema de vacunación con ID {vacunacion.idEsquemaVacunacion}.");
+            }
+
+            var mascotaExiste = await _context.Mascotas
+                .AnyAsync(m => m.idMascota == vacunacion.idMascota);
+
+            if (!mascotaExiste)
+            {
+                return NotFound($"No existe una mascota con ID {vacunacion.idMascota}.");
+            }
+
+            var unidadExiste = await _context.UnidadesMedida
+                .AnyAsync(u => u.idUnidadMedida == vacunacion.idUnidadMedida);
+
+            if (!unidadExiste)
+            {
+                return NotFound($"No existe una unidad de medida con ID {vacunacion.idUnidadMedida}.");
+            }
+
+            vacunacion.CalcularProximaFecha(esquema.intervaloDias);
+
+            vacunacion.fechaCreacion = DateTime.Now;
+            vacunacion.fechaActualizacion = DateTime.Now;
+
             _context.Vacunaciones.Add(vacunacion);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetVacunacion", new { id = vacunacion.idVacunacion }, vacunacion);
+            return CreatedAtAction(
+                nameof(GetVacunacion),
+                new { id = vacunacion.idVacunacion },
+                new
+                {
+                    vacunacion.idVacunacion,
+                    vacunacion.fechaAplicacion,
+                    vacunacion.dosisAplicada,
+                    vacunacion.numeroDosis,
+                    vacunacion.observaciones,
+                    vacunacion.proximaFecha,
+                    vacunacion.idEsquemaVacunacion,
+                    vacunacion.idUnidadMedida,
+                    vacunacion.idMascota
+                }
+            );
         }
 
         // DELETE: api/Vacunaciones/5
