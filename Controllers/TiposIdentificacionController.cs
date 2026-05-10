@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using Azure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using sigevet.DTOs.TiposIdentificacion;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,88 +18,160 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/TipoIdentificacions
+        // GET: api/TipoIdentificacion
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TipoIdentificacion>>> GetTiposIdentificacion()
+        public async Task<ActionResult<IEnumerable<TipoIdentificacionResponseDto>>> GetTiposIdentificacion()
         {
-            return await _context.TiposIdentificacion.ToListAsync();
+            var tiposIdentificacion = await _context.TiposIdentificacion
+                .Where(tipId => !tipId.isDeleted)
+                .Select(tipId => new TipoIdentificacionResponseDto
+                {
+                    idTipoIdentificacion = tipId.idTipoIdentificacion,
+                    tipoIdentificacion = tipId.tipoIdentificacion,
+                    descripcion = tipId.descripcion
+                }).ToListAsync();
+            return Ok(tiposIdentificacion);
         }
 
         // GET: api/TipoIdentificacions/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<TipoIdentificacion>> GetTipoIdentificacion(int id)
+        public async Task<ActionResult<TipoIdentificacionResponseDto>> GetTipoIdentificacion(int id)
         {
-            var tipoIdentificacion = await _context.TiposIdentificacion.FindAsync(id);
-
-            if (tipoIdentificacion == null)
-            {
-                return NotFound();
-            }
-
-            return tipoIdentificacion;
-        }
-
-        // PUT: api/TipoIdentificacions/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutTipoIdentificacion(int id, TipoIdentificacion tipoIdentificacion)
-        {
-            if (id != tipoIdentificacion.idTipoIdentificacion)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(tipoIdentificacion).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!TipoIdentificacionExists(id))
+            var tiposIdentificacion = await _context.TiposIdentificacion
+                .Where(tipId => !tipId.isDeleted)
+                .Where(tipId => tipId.idTipoIdentificacion == id)
+                .Select(tipId => new TipoIdentificacionResponseDto
                 {
-                    return NotFound();
-                }
-                else
+                    idTipoIdentificacion = tipId.idTipoIdentificacion,
+                    tipoIdentificacion = tipId.tipoIdentificacion,
+                    descripcion = tipId.descripcion
+                }).FirstOrDefaultAsync();
+
+            if (tiposIdentificacion == null)
+            {
+                return NotFound(new
                 {
-                    throw;
-                }
+                    mensaje = "No se encontró el tipo de identificación con el id proporcionado. (ID: " + id + ")"
+                });
             }
 
-            return NoContent();
+            return Ok(tiposIdentificacion);
         }
 
         // POST: api/TipoIdentificacions
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<TipoIdentificacion>> PostTipoIdentificacion(TipoIdentificacion tipoIdentificacion)
+        public async Task<ActionResult<TipoIdentificacionResponseDto>> PostTipoIdentificacion([FromForm] TipoIdentificacionFormDto request)
         {
-            _context.TiposIdentificacion.Add(tipoIdentificacion);
+            if (string.IsNullOrWhiteSpace(request.tipoIdentificacion))
+            {
+                return BadRequest(new
+                {
+                    mensaje = "El campo 'tipoIdentificacion' es obligatorio y no puede estar vacío."
+                });
+            }
+
+            var existeTipoIdentificacion = await _context.TiposIdentificacion
+                .AnyAsync(tipId => !tipId.isDeleted &&
+                tipId.tipoIdentificacion.ToLower() == request.tipoIdentificacion.ToLower());
+
+            if (existeTipoIdentificacion) {
+                return BadRequest(new
+                {
+                    mensaje = "Ya existe un tipo de identificación con el mismo nombre. (Nombre ingresado: " + request.tipoIdentificacion + ")"
+                });
+            }
+
+            var nuevoTipoIdentificacion = new TipoIdentificacion
+            {
+                tipoIdentificacion = request.tipoIdentificacion.Trim(),
+                descripcion = request.descripcion?.Trim(),
+                isDeleted = false,
+                fechaCreacion = DateTime.Now
+            };
+
+            _context.TiposIdentificacion.Add(nuevoTipoIdentificacion);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetTipoIdentificacion", new { id = tipoIdentificacion.idTipoIdentificacion }, tipoIdentificacion);
+            var responseDto = new TipoIdentificacionResponseDto
+            {
+                idTipoIdentificacion = nuevoTipoIdentificacion.idTipoIdentificacion,
+                tipoIdentificacion = nuevoTipoIdentificacion.tipoIdentificacion,
+                descripcion = nuevoTipoIdentificacion.descripcion
+            };
+
+            return CreatedAtAction(
+                nameof(GetTipoIdentificacion),
+                new { id = nuevoTipoIdentificacion.idTipoIdentificacion }, responseDto);
+
         }
 
-        // DELETE: api/TipoIdentificacions/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteTipoIdentificacion(int id)
-        //{
-        //    var tipoIdentificacion = await _context.TiposIdentificacion.FindAsync(id);
-        //    if (tipoIdentificacion == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    _context.TiposIdentificacion.Remove(tipoIdentificacion);
-        //    await _context.SaveChangesAsync();
-
-        //    return NoContent();
-        //}
-
-        private bool TipoIdentificacionExists(int id)
+        // PUT: api/TipoIdentificacions/5
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutTipoIdentificacion(int id, [FromForm] TipoIdentificacionFormDto request)
         {
-            return _context.TiposIdentificacion.Any(e => e.idTipoIdentificacion == id);
+
+            var tipoIdentificacionExistente = await _context.TiposIdentificacion
+                .FirstOrDefaultAsync(tipId => !tipId.isDeleted && tipId.idTipoIdentificacion == id);
+
+            if (tipoIdentificacionExistente == null)
+            {
+                return NotFound(new
+                {
+                    mensaje = "No se encontró el tipo de identificación con el id proporcionado. (ID: " + id + ")"
+                });
+            }
+
+            var existeOtroTipoIdentificacionConMismoNombre = await _context.TiposIdentificacion
+                .Where(tipId => !tipId.isDeleted)
+                .AnyAsync(tipId => tipId.idTipoIdentificacion != id &&
+                tipId.tipoIdentificacion.ToLower() == request.tipoIdentificacion.ToLower());
+
+            if (existeOtroTipoIdentificacionConMismoNombre)
+            {
+                return BadRequest(new
+                {
+                    mensaje = "Ya existe otro tipo de identificación con el mismo nombre. (Nombre ingresado: " + request.tipoIdentificacion + ")"
+                });
+            }
+
+
+            tipoIdentificacionExistente.tipoIdentificacion = request.tipoIdentificacion.Trim();
+            tipoIdentificacionExistente.descripcion = request.descripcion.IsNullOrEmpty() ? tipoIdentificacionExistente.descripcion : request.descripcion?.Trim();
+            tipoIdentificacionExistente.fechaActualizacion = DateTime.Now;
+
+            _context.Entry(tipoIdentificacionExistente).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            
+            return NoContent();
+        }
+
+        // POST: api/TiposIdentificacion/delete
+        [HttpPost("delete/{id}")]
+        public async Task<IActionResult> DeleteTipoIdentificacion(int id)
+        {
+            var tipoIdentificacionExistente = await _context.TiposIdentificacion
+                .FirstOrDefaultAsync(tipId => !tipId.isDeleted && tipId.idTipoIdentificacion == id);
+
+            if (tipoIdentificacionExistente == null)
+            {
+                return NotFound(new
+                {
+                    mensaje = "No se encontró el tipo de identificación con el id proporcionado. (ID: " + id + ")"
+                });
+            }
+
+            tipoIdentificacionExistente.isDeleted = true;
+            tipoIdentificacionExistente.fechaActualizacion = DateTime.Now;
+
+            _context.Entry(tipoIdentificacionExistente).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                mensaje = "El tipo de identificación ha sido eliminado exitosamente. (ID: " + id + ")"
+            });
         }
     }
 }

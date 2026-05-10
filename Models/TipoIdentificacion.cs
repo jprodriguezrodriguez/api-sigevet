@@ -8,10 +8,5 @@
 
         public ICollection<Persona> personas { get; set; } = new List<Persona>();
 
-        public void registrarTipoIdentificacion(String nombreTipoIdentificacion)
-        {
-        }
-
-        public void actualizarTipoIdentificacion(int idTipoIdentificacion) { }
     }
 }
