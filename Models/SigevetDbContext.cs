@@ -40,7 +40,7 @@ namespace sigevet.Models
         public DbSet<AlertaVacunacion> AlertasVacunacion { get; set; }
         public DbSet<CuentasUsuarios> CuentasUsuarios { get; set; }
         public DbSet<TokensCuentas> TokensCuentas { get; set; }
-        public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<RefrescarToken> RefrescarTokens { get; set; }
 
         // Tablas Intermedias
         public DbSet<EspecialidadVeterinario> EspecialidadesVeterinario { get; set; }
@@ -452,9 +452,9 @@ namespace sigevet.Models
 
             // Configuración de los campos de la entidad CuentasUsuario
             modelBuilder.Entity<CuentasUsuarios>().HasKey(cuUsu => cuUsu.idCuentaUsuario);
-            modelBuilder.Entity<CuentasUsuarios>().Property(cuUsu => cuUsu.username).IsRequired().HasMaxLength(50); ;
-            modelBuilder.Entity<CuentasUsuarios>().HasIndex(cuUsu => cuUsu.username).IsUnique();
-            modelBuilder.Entity<CuentasUsuarios>().Property(cuUsu => cuUsu.passwordHash).IsRequired().HasMaxLength(255);
+            modelBuilder.Entity<CuentasUsuarios>().Property(cuUsu => cuUsu.usuario).IsRequired().HasMaxLength(50); ;
+            modelBuilder.Entity<CuentasUsuarios>().HasIndex(cuUsu => cuUsu.usuario).IsUnique();
+            modelBuilder.Entity<CuentasUsuarios>().Property(cuUsu => cuUsu.contraseniaHash).IsRequired().HasMaxLength(255);
             modelBuilder.Entity<CuentasUsuarios>().Property(cuUsu => cuUsu.ultimoInicioSesion);
             modelBuilder.Entity<CuentasUsuarios>().Property(cuUsu => cuUsu.intentosFallidos);
             modelBuilder.Entity<CuentasUsuarios>().Property(cuUsu => cuUsu.fechaDesbloqueo);
@@ -491,15 +491,15 @@ namespace sigevet.Models
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Configuración de los campos de la entidad RefreshToken
-            modelBuilder.Entity<RefreshToken>().HasKey(rt => rt.idRefreshToken);
-            modelBuilder.Entity<RefreshToken>().Property(rt => rt.tokenHash).IsRequired().HasMaxLength(255);
-            modelBuilder.Entity<RefreshToken>().Property(rt => rt.fechaCreacion);
-            modelBuilder.Entity<RefreshToken>().Property(rt => rt.fechaExpiracion);
-            modelBuilder.Entity<RefreshToken>().Property(rt => rt.fechaRevocacion);
-            modelBuilder.Entity<RefreshToken>().Property(rt => rt.ip).HasMaxLength(45);
-            modelBuilder.Entity<RefreshToken>().Property(rt => rt.userAgent).HasMaxLength(255);
+            modelBuilder.Entity<RefrescarToken>().HasKey(rt => rt.idRefrescarToken);
+            modelBuilder.Entity<RefrescarToken>().Property(rt => rt.tokenHash).IsRequired().HasMaxLength(255);
+            modelBuilder.Entity<RefrescarToken>().Property(rt => rt.fechaCreacion);
+            modelBuilder.Entity<RefrescarToken>().Property(rt => rt.fechaExpiracion);
+            modelBuilder.Entity<RefrescarToken>().Property(rt => rt.fechaRevocacion);
+            modelBuilder.Entity<RefrescarToken>().Property(rt => rt.ip).HasMaxLength(45);
+            modelBuilder.Entity<RefrescarToken>().Property(rt => rt.userAgent).HasMaxLength(255);
             // --- Foránea RefreshToken - Persona
-            modelBuilder.Entity<RefreshToken>()
+            modelBuilder.Entity<RefrescarToken>()
                 .HasOne(rt => rt.tokensPorCuentaUsuario)
                 .WithMany(cu => cu.refreshTokens)
                 .HasForeignKey(rt => rt.idCuentaUsuario)

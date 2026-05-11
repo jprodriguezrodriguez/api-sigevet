@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using sigevet.Models;
 
@@ -11,9 +12,11 @@ using sigevet.Models;
 namespace sigevet.Migrations
 {
     [DbContext(typeof(SigevetDbContext))]
-    partial class SigevetDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260510235547_UpdateFieldNams")]
+    partial class UpdateFieldNams
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -243,7 +246,7 @@ namespace sigevet.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("idCuentaUsuario"));
 
-                    b.Property<string>("contraseniaHash")
+                    b.Property<string>("contraseñaHash")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
@@ -836,7 +839,7 @@ namespace sigevet.Migrations
 
                     b.HasIndex("idCuentaUsuario");
 
-                    b.ToTable("RefrescarTokens");
+                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("sigevet.Models.RolParticipacion", b =>

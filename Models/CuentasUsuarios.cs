@@ -5,8 +5,8 @@ namespace sigevet.Models
     public class CuentasUsuarios : Auditable
     {
         public required int idCuentaUsuario { get; set; }
-        public required string username { get; set; }
-        public required string passwordHash { get; set; }
+        public required string usuario { get; set; }
+        public required string contraseniaHash { get; set; }
         public DateTime? ultimoInicioSesion { get; set; }
         public int intentosFallidos { get; set; }
         public DateTime? fechaDesbloqueo { get; set; }
@@ -21,7 +21,7 @@ namespace sigevet.Models
         public Persona? persona { get; set; }
         public Estado? estadoCuenta { get; set; }
         public Roles? rolesUsuario { get; set; }
-        public ICollection<RefreshToken> refreshTokens { get; set; } = new List<RefreshToken>();
+        public ICollection<RefrescarToken> refreshTokens { get; set; } = new List<RefrescarToken>();
         public ICollection<TokensCuentas> tokensCuentas { get; set; } = new List<TokensCuentas>();
 
     }

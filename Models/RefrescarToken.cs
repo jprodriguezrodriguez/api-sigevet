@@ -1,8 +1,8 @@
 ﻿namespace sigevet.Models
 {
-    public class RefreshToken
+    public class RefrescarToken
     {
-        public int idRefreshToken { get; set; }
+        public int idRefrescarToken { get; set; }
         public string tokenHash { get; set; } = null!;
         public DateTime fechaCreacion { get; set; } = DateTime.Now;
         public DateTime fechaExpiracion { get; set; }
