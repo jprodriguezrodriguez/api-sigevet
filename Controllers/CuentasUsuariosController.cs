@@ -171,7 +171,7 @@ namespace sigevet.Controllers
                 ultimoInicioSesion = null,
                 intentosFallidos = 0,
                 fechaDesbloqueo = null,
-                idEstadoCuenta = 0,
+                idEstadoCuenta = 1,
                 idRol = cuentaUsuario.idRol,
                 idPersona = cuentaUsuario.idPersona
             };

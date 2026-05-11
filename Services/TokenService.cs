@@ -81,7 +81,9 @@ namespace sigevet.Services
             var refreshTokenEntity = await _context.RefrescarTokens
                 .Include(rt => rt.tokensPorCuentaUsuario)
                 .ThenInclude(u => u.rolesUsuario)
-                .FirstOrDefaultAsync(rt => rt.tokenHash == refreshTokenHash && rt.estaActivo());
+                .FirstOrDefaultAsync(rt => rt.tokenHash == refreshTokenHash
+                    && rt.fechaRevocacion == null
+                    && rt.fechaExpiracion > DateTime.UtcNow);
 
             return refreshTokenEntity?.tokensPorCuentaUsuario;
         }
