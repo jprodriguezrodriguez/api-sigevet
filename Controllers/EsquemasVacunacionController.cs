@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using sigevet.Models;
+using sigevet.DTOs.EsquemasVacunacion;
+using sigevet.DTOs.Vacunaciones;
+using sigevet.DTOs.Mascotas;
+using sigevet.DTOs.UnidadesMedida;
 
 namespace sigevet.Controllers
 {
@@ -22,23 +21,106 @@ namespace sigevet.Controllers
 
         // GET: api/EsquemasVacunacion
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<EsquemaVacunacion>>> GetEsquemasVacunacion()
+        public async Task<ActionResult<IEnumerable<EsquemasVacunacionResponseDto>>> GetEsquemasVacunacion()
         {
-            return await _context.EsquemasVacunacion.ToListAsync();
+            var esquemasVacunacion = await _context.EsquemasVacunacion
+                .Include(ev => ev.vacunaciones)
+                    .ThenInclude(v => v.unidadMedida)
+                .Include(ev => ev.vacunaciones)
+                    .ThenInclude(v => v.mascota)
+                    .ThenInclude(r => r.raza)
+                .Include(ev => ev.tipoVacuna)
+                .ToListAsync();
+
+            var resultado = esquemasVacunacion.Select(ev => new EsquemasVacunacionResponseDto
+            {
+                idEsquemaVacunacion = ev.idEsquemaVacunacion,
+                esquemaVacunacion = ev.esquemaVacunacion,
+                intervaloDias = ev.intervaloDias,
+                edadMinimaDias = ev.edadMinimaDias,
+                observaciones = ev.observaciones,
+                tipoVacuna = ev.tipoVacuna != null ? ev.tipoVacuna.tipoVacuna : "",
+                vacunaciones = ev.vacunaciones.Select(v => new VacunacionesResponseDto
+                {
+                    idVacunacion = v.idVacunacion,
+                    fechaAplicacion = v.fechaAplicacion,
+                    dosisAplicada = v.dosisAplicada,
+                    numeroDosis = v.numeroDosis,
+                    observaciones = v.observaciones ?? "",
+                    proximaFecha = v.proximaFecha,
+                    mascotas = v.mascota != null ? new MascotasResponseDto
+                    {
+                        idMascota = v.mascota.idMascota,
+                        nombre = v.mascota.nombre,
+                        raza = v.mascota.raza != null ? v.mascota.raza.raza : "",
+                        fechaNacimiento = v.mascota.fechaNacimiento,
+                        sexo = v.mascota.sexo
+                    } : null,
+                    unidadesMedida = v.unidadMedida != null ? new UnidadesMedidaResponseDto
+                    {
+                        idUnidadMedida = v.unidadMedida.idUnidadMedida,
+                        unidadMedida = v.unidadMedida.unidadMedida
+                    } : null,
+                    esquemasVacunacion = null
+                }).ToList()
+            }).ToList();
+            
+            return Ok(resultado);
         }
 
         // GET: api/EsquemasVacunacion/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<EsquemaVacunacion>> GetEsquemaVacunacion(int id)
+        public async Task<ActionResult<EsquemasVacunacionResponseDto>> GetEsquemaVacunacion(int id)
         {
-            var esquemaVacunacion = await _context.EsquemasVacunacion.FindAsync(id);
+            var esquemasVacunacion = await _context.EsquemasVacunacion
+                .Include(ev => ev.vacunaciones)
+                    .ThenInclude(v => v.unidadMedida)
+                .Include(ev => ev.vacunaciones)
+                    .ThenInclude(v => v.mascota)
+                    .ThenInclude(r => r.raza)
+                .Include(ev => ev.tipoVacuna)
+                .Where(ev => ev.idEsquemaVacunacion == id)
+                .ToListAsync();
 
-            if (esquemaVacunacion == null)
+            var resultado = esquemasVacunacion.Select(ev => new EsquemasVacunacionResponseDto
+            {
+                idEsquemaVacunacion = ev.idEsquemaVacunacion,
+                esquemaVacunacion = ev.esquemaVacunacion,
+                intervaloDias = ev.intervaloDias,
+                edadMinimaDias = ev.edadMinimaDias,
+                observaciones = ev.observaciones,
+                tipoVacuna = ev.tipoVacuna != null ? ev.tipoVacuna.tipoVacuna : "",
+                vacunaciones = ev.vacunaciones.Select(v => new VacunacionesResponseDto
+                {
+                    idVacunacion = v.idVacunacion,
+                    fechaAplicacion = v.fechaAplicacion,
+                    dosisAplicada = v.dosisAplicada,
+                    numeroDosis = v.numeroDosis,
+                    observaciones = v.observaciones ?? "",
+                    proximaFecha = v.proximaFecha,
+                    mascotas = v.mascota != null ? new MascotasResponseDto
+                    {
+                        idMascota = v.mascota.idMascota,
+                        nombre = v.mascota.nombre,
+                        raza = v.mascota.raza != null ? v.mascota.raza.raza : "",
+                        fechaNacimiento = v.mascota.fechaNacimiento,
+                        sexo = v.mascota.sexo
+                    } : null,
+                    unidadesMedida = v.unidadMedida != null ? new UnidadesMedidaResponseDto
+                    {
+                        idUnidadMedida = v.unidadMedida.idUnidadMedida,
+                        unidadMedida = v.unidadMedida.unidadMedida
+                    } : null,
+                    esquemasVacunacion = null
+                }).ToList()
+            }).FirstOrDefault();
+
+            if (resultado == null)
             {
                 return NotFound();
             }
 
-            return esquemaVacunacion;
+            return Ok(resultado);
         }
 
         // PUT: api/EsquemasVacunacion/5
@@ -84,20 +166,30 @@ namespace sigevet.Controllers
         }
 
         // DELETE: api/EsquemasVacunacion/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteEsquemaVacunacion(int id)
-        //{
-        //    var esquemaVacunacion = await _context.EsquemasVacunacion.FindAsync(id);
-        //    if (esquemaVacunacion == null)
-        //    {
-        //        return NotFound();
-        //    }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteEsquemaVacunacion(int id)
+        {
+            var vacunacionesRelacionadas = await _context.Vacunaciones.FirstOrDefaultAsync(v => v.idEsquemaVacunacion == id);
+            if (vacunacionesRelacionadas is not null)
+            {
+                return BadRequest(new
+                {
+                    message = "El esquema esta relacionado a otras vacunaciones, no se puede eliminar"
+                });
+            }
 
-        //    _context.EsquemasVacunacion.Remove(esquemaVacunacion);
-        //    await _context.SaveChangesAsync();
+            var esquemaVacunacion = await _context.EsquemasVacunacion.FindAsync(id);
+            if (esquemaVacunacion == null || esquemaVacunacion.isDeleted)
+            {
+                return NotFound();
+            }
 
-        //    return NoContent();
-        //}
+            esquemaVacunacion.isDeleted = true;
+            _context.EsquemasVacunacion.Update(esquemaVacunacion);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
 
         private bool EsquemaVacunacionExists(int id)
         {
