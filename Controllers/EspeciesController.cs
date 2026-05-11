@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.Especies;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -22,86 +18,178 @@ namespace sigevet.Controllers
 
         // GET: api/Especies
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Especie>>> GetEspecies()
+        public async Task<ActionResult<IEnumerable<EspecieResponseDto>>> GetEspecies()
         {
-            return await _context.Especies.ToListAsync();
+            var especies = await _context.Especies
+                .Where(especie => !especie.isDeleted)
+                .Select(especie => new EspecieResponseDto
+                {
+                    idEspecie = especie.idEspecie,
+                    especie = especie.especie,
+                    descripcion = especie.descripcion
+                })
+                .ToListAsync();
+
+            return Ok(especies);
         }
 
         // GET: api/Especies/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Especie>> GetEspecie(int id)
+        public async Task<ActionResult<EspecieResponseDto>> GetEspecie(int id)
         {
-            var especie = await _context.Especies.FindAsync(id);
+            var especie = await _context.Especies
+                .Where(especie => !especie.isDeleted)
+                .Where(especie => especie.idEspecie == id)
+                .Select(especie => new EspecieResponseDto
+                {
+                    idEspecie = especie.idEspecie,
+                    especie = especie.especie,
+                    descripcion = especie.descripcion
+                })
+                .FirstOrDefaultAsync();
 
             if (especie == null)
             {
-                return NotFound();
-            }
-
-            return especie;
-        }
-
-        // PUT: api/Especies/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutEspecie(int id, Especie especie)
-        {
-            if (id != especie.idEspecie)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(especie).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!EspecieExists(id))
+                return NotFound(new
                 {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                    mensaje = "No se encontró la especie con el id proporcionado. (ID: " + id + ")"
+                });
             }
 
-            return NoContent();
+            return Ok(especie);
         }
 
         // POST: api/Especies
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Especie>> PostEspecie(Especie especie)
+        public async Task<ActionResult<EspecieResponseDto>> PostEspecie([FromForm] EspecieFormDto request)
         {
-            _context.Especies.Add(especie);
+            if (string.IsNullOrWhiteSpace(request.especie))
+            {
+                return BadRequest(new
+                {
+                    mensaje = "El campo 'especie' es obligatorio y no puede estar vacío."
+                });
+            }
+
+            var existeEspecie = await _context.Especies
+                .AnyAsync(especie =>
+                    !especie.isDeleted &&
+                    especie.especie.ToLower() == request.especie.ToLower());
+
+            if (existeEspecie)
+            {
+                return BadRequest(new
+                {
+                    mensaje = "Ya existe una especie con el mismo nombre. (Nombre ingresado: " + request.especie + ")"
+                });
+            }
+
+            var nuevaEspecie = new Especie
+            {
+                especie = request.especie.Trim(),
+                descripcion = request.descripcion?.Trim(),
+                isDeleted = false,
+                fechaCreacion = DateTime.Now
+            };
+
+            _context.Especies.Add(nuevaEspecie);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetEspecie", new { id = especie.idEspecie }, especie);
+            var responseDto = new EspecieResponseDto
+            {
+                idEspecie = nuevaEspecie.idEspecie,
+                especie = nuevaEspecie.especie,
+                descripcion = nuevaEspecie.descripcion
+            };
+
+            return CreatedAtAction(
+                nameof(GetEspecie),
+                new { id = nuevaEspecie.idEspecie },
+                responseDto
+            );
         }
 
-        // DELETE: api/Especies/5
-        [HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteEspecie(int id)
-        //{
-        //    var especie = await _context.Especies.FindAsync(id);
-        //    if (especie == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    _context.Especies.Remove(especie);
-        //    await _context.SaveChangesAsync();
-
-        //    return NoContent();
-        //}
-
-        private bool EspecieExists(int id)
+        // PUT: api/Especies/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutEspecie(int id, [FromForm] EspecieFormDto request)
         {
-            return _context.Especies.Any(e => e.idEspecie == id);
+            var especieExistente = await _context.Especies
+                .FirstOrDefaultAsync(especie =>
+                    !especie.isDeleted &&
+                    especie.idEspecie == id);
+
+            if (especieExistente == null)
+            {
+                return NotFound(new
+                {
+                    mensaje = "No se encontró la especie con el id proporcionado. (ID: " + id + ")"
+                });
+            }
+
+            if (string.IsNullOrWhiteSpace(request.especie))
+            {
+                return BadRequest(new
+                {
+                    mensaje = "El campo 'especie' es obligatorio y no puede estar vacío."
+                });
+            }
+
+            var existeOtraEspecieConMismoNombre = await _context.Especies
+                .Where(especie => !especie.isDeleted)
+                .AnyAsync(especie =>
+                    especie.idEspecie != id &&
+                    especie.especie.ToLower() == request.especie.ToLower());
+
+            if (existeOtraEspecieConMismoNombre)
+            {
+                return BadRequest(new
+                {
+                    mensaje = "Ya existe otra especie con el mismo nombre. (Nombre ingresado: " + request.especie + ")"
+                });
+            }
+
+            especieExistente.especie = request.especie.Trim();
+            especieExistente.descripcion = string.IsNullOrWhiteSpace(request.descripcion)
+                ? especieExistente.descripcion
+                : request.descripcion.Trim();
+            especieExistente.fechaActualizacion = DateTime.Now;
+
+            _context.Entry(especieExistente).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                mensaje = "La especie " + especieExistente.especie + " ha sido actualizada exitosamente. (ID: " + id + " - " + especieExistente.especie + ")"
+            });
+        }
+
+        // POST: api/Especies/delete/5
+        [HttpPost("delete/{id}")]
+        public async Task<IActionResult> DeleteEspecie(int id)
+        {
+            var especieExistente = await _context.Especies
+                .FirstOrDefaultAsync(especie =>
+                    !especie.isDeleted &&
+                    especie.idEspecie == id);
+
+            if (especieExistente == null)
+            {
+                return NotFound(new
+                {
+                    mensaje = "No se encontró la especie con el id proporcionado. (ID: " + id + ")"
+                });
+            }
+
+            especieExistente.isDeleted = true;
+            especieExistente.fechaActualizacion = DateTime.Now;
+
+            _context.Entry(especieExistente).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                mensaje = "La especie ha sido eliminada exitosamente. (ID: " + id + ")"
+            });
         }
     }
 }

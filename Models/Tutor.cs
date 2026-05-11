@@ -4,6 +4,7 @@
     {
         public int idPersonaTut {  get; set; }
         public bool autorizaNotificaciones { get; set; }
+        public bool isDeleted { get; set; }
         public DateTime fechaRegistroTutor { get; set; } = DateTime.Now;
         public DateTime fechaActualizacionTutor { get; set; } = DateTime.Now;
 

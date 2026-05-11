@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.CategoriasEstado;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -22,105 +18,178 @@ namespace sigevet.Controllers
 
         // GET: api/CategoriasEstado
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CategoriaEstado>>> GetCategoriasEstado()
+        public async Task<ActionResult<IEnumerable<CategoriaEstadoResponseDto>>> GetCategoriasEstado()
         {
-            return await _context.CategoriasEstado.ToListAsync();
+            var categoriasEstado = await _context.CategoriasEstado
+                .Where(catEstado => !catEstado.isDeleted)
+                .Select(catEstado => new CategoriaEstadoResponseDto
+                {
+                    idCategoriaEstado = catEstado.idCategoriaEstado,
+                    categoriaEstado = catEstado.categoriaEstado,
+                    descripcion = catEstado.descripcion
+                })
+                .ToListAsync();
+
+            return Ok(categoriasEstado);
         }
 
-        // GET: api/CategoriaEstadoes/5
+        // GET: api/CategoriasEstado/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<CategoriaEstado>> GetCategoriaEstado(int id)
+        public async Task<ActionResult<CategoriaEstadoResponseDto>> GetCategoriaEstado(int id)
         {
-            var categoriaEstado = await _context.CategoriasEstado.FindAsync(id);
+            var categoriaEstado = await _context.CategoriasEstado
+                .Where(catEstado => !catEstado.isDeleted)
+                .Where(catEstado => catEstado.idCategoriaEstado == id)
+                .Select(catEstado => new CategoriaEstadoResponseDto
+                {
+                    idCategoriaEstado = catEstado.idCategoriaEstado,
+                    categoriaEstado = catEstado.categoriaEstado,
+                    descripcion = catEstado.descripcion
+                })
+                .FirstOrDefaultAsync();
 
             if (categoriaEstado == null)
             {
-                return NotFound();
+                return NotFound(new
+                {
+                    mensaje = "No se encontró la categoría de estado con el id proporcionado. (ID: " + id + ")"
+                });
             }
 
-            return categoriaEstado;
+            return Ok(categoriaEstado);
         }
 
-        // PUT: api/CategoriaEstadoes/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutCategoriaEstado(int id, CategoriaEstado categoriaEstado)
-        {
-            if (id != categoriaEstado.idCategoriaEstado)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(categoriaEstado).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!CategoriaEstadoExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
-        }
-
-        // POST: api/CategoriaEstadoes
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // POST: api/CategoriasEstado
         [HttpPost]
-        public async Task<ActionResult<CategoriaEstado>> PostCategoriaEstado(CategoriaEstado categoriaEstado)
+        public async Task<ActionResult<CategoriaEstadoResponseDto>> PostCategoriaEstado([FromForm] CategoriaEstadoFormDto request)
         {
-            _context.CategoriasEstado.Add(categoriaEstado);
+            if (string.IsNullOrWhiteSpace(request.categoriaEstado))
+            {
+                return BadRequest(new
+                {
+                    mensaje = "El campo 'categoriaEstado' es obligatorio y no puede estar vacío."
+                });
+            }
+
+            var existeCategoriaEstado = await _context.CategoriasEstado
+                .AnyAsync(catEstado =>
+                    !catEstado.isDeleted &&
+                    catEstado.categoriaEstado.ToLower() == request.categoriaEstado.ToLower());
+
+            if (existeCategoriaEstado)
+            {
+                return BadRequest(new
+                {
+                    mensaje = "Ya existe una categoría de estado con el mismo nombre. (Nombre ingresado: " + request.categoriaEstado + ")"
+                });
+            }
+
+            var nuevaCategoriaEstado = new CategoriaEstado
+            {
+                categoriaEstado = request.categoriaEstado.Trim(),
+                descripcion = request.descripcion?.Trim(),
+                isDeleted = false,
+                fechaCreacion = DateTime.Now
+            };
+
+            _context.CategoriasEstado.Add(nuevaCategoriaEstado);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetCategoriaEstado", new { id = categoriaEstado.idCategoriaEstado }, categoriaEstado);
+            var responseDto = new CategoriaEstadoResponseDto
+            {
+                idCategoriaEstado = nuevaCategoriaEstado.idCategoriaEstado,
+                categoriaEstado = nuevaCategoriaEstado.categoriaEstado,
+                descripcion = nuevaCategoriaEstado.descripcion
+            };
+
+            return CreatedAtAction(
+                nameof(GetCategoriaEstado),
+                new { id = nuevaCategoriaEstado.idCategoriaEstado },
+                responseDto
+            );
         }
 
-        //// DELETE: api/CategoriaEstadoes/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteCategoriaEstado(int id)
-        //{
-        //    var categoriaEstado = await _context.CategoriasEstado.FindAsync(id);
-        //    if (categoriaEstado == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    _context.CategoriasEstado.Remove(categoriaEstado);
-        //    await _context.SaveChangesAsync();
-
-        //    return NoContent();
-        //}
-
-        // GET: api/CategoriasEstado/2/estados
-        [HttpGet("estados-por-categoria/{id}")]
-        public async Task<ActionResult<IEnumerable<Estado>>> GetEstadosDeCategoria(int id)
+        // PUT: api/CategoriasEstado/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutCategoriaEstado(int id, [FromForm] CategoriaEstadoFormDto request)
         {
-            var categoriaExiste = await _context.CategoriasEstado
-                .AnyAsync(c => c.idCategoriaEstado == id);
+            var categoriaEstadoExistente = await _context.CategoriasEstado
+                .FirstOrDefaultAsync(catEstado =>
+                    !catEstado.isDeleted &&
+                    catEstado.idCategoriaEstado == id);
 
-            if (!categoriaExiste)
+            if (categoriaEstadoExistente == null)
             {
-                return NotFound($"No existe una categoría de estado con ID {id}.");
+                return NotFound(new
+                {
+                    mensaje = "No se encontró la categoría de estado con el id proporcionado. (ID: " + id + ")"
+                });
             }
 
-            var estados = await _context.Estados
-                .Where(e => e.idCategoriaEstado == id)
-                .ToListAsync();
+            if (string.IsNullOrWhiteSpace(request.categoriaEstado))
+            {
+                return BadRequest(new
+                {
+                    mensaje = "El campo 'categoriaEstado' es obligatorio y no puede estar vacío."
+                });
+            }
 
-            return Ok(estados);
+            var existeOtraCategoriaEstadoConMismoNombre = await _context.CategoriasEstado
+                .Where(catEstado => !catEstado.isDeleted)
+                .AnyAsync(catEstado =>
+                    catEstado.idCategoriaEstado != id &&
+                    catEstado.categoriaEstado.ToLower() == request.categoriaEstado.ToLower());
+
+            if (existeOtraCategoriaEstadoConMismoNombre)
+            {
+                return BadRequest(new
+                {
+                    mensaje = "Ya existe otra categoría de estado con el mismo nombre. (Nombre ingresado: " + request.categoriaEstado + ")"
+                });
+            }
+
+            categoriaEstadoExistente.categoriaEstado = request.categoriaEstado.Trim();
+            categoriaEstadoExistente.descripcion = string.IsNullOrWhiteSpace(request.descripcion)
+                ? categoriaEstadoExistente.descripcion
+                : request.descripcion.Trim();
+            categoriaEstadoExistente.fechaActualizacion = DateTime.Now;
+
+            _context.Entry(categoriaEstadoExistente).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                mensaje = "La categoría de estado " + categoriaEstadoExistente.categoriaEstado + " ha sido actualizada exitosamente. (ID: " + id + " - " + categoriaEstadoExistente.categoriaEstado + ")"
+            });
         }
 
-        private bool CategoriaEstadoExists(int id)
+        // POST: api/CategoriasEstado/delete/5
+        [HttpPost("delete/{id}")]
+        public async Task<IActionResult> DeleteCategoriaEstado(int id)
         {
-            return _context.CategoriasEstado.Any(e => e.idCategoriaEstado == id);
+            var categoriaEstadoExistente = await _context.CategoriasEstado
+                .FirstOrDefaultAsync(catEstado =>
+                    !catEstado.isDeleted &&
+                    catEstado.idCategoriaEstado == id);
+
+            if (categoriaEstadoExistente == null)
+            {
+                return NotFound(new
+                {
+                    mensaje = "No se encontró la categoría de estado con el id proporcionado. (ID: " + id + ")"
+                });
+            }
+
+            categoriaEstadoExistente.isDeleted = true;
+            categoriaEstadoExistente.fechaActualizacion = DateTime.Now;
+
+            _context.Entry(categoriaEstadoExistente).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                mensaje = "La categoría de estado ha sido eliminada exitosamente. (ID: " + id + ")"
+            });
         }
     }
 }
