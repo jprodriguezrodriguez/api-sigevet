@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.TiposContacto;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,84 +16,94 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/TiposContacto
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TipoContacto>>> GetTiposContacto()
+        public async Task<ActionResult<IEnumerable<TiposContactoResponseDto>>> GetTiposContacto()
         {
-            return await _context.TiposContacto.ToListAsync();
+            var tipos = await _context.TiposContacto
+                .Where(t => !t.isDeleted)
+                .Select(t => new TiposContactoResponseDto
+                {
+                    idTipoContacto = t.idTipoContacto,
+                    tipoContacto = t.tipoContacto,
+                    descripcion = t.descripcion
+                }).ToListAsync();
+
+            return Ok(tipos);
         }
 
-        // GET: api/TiposContacto/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<TipoContacto>> GetTipoContacto(int id)
+        public async Task<ActionResult<TiposContactoResponseDto>> GetTipoContacto(int id)
         {
-            var tipoContacto = await _context.TiposContacto.FindAsync(id);
+            var tipo = await _context.TiposContacto
+                .Where(t => !t.isDeleted && t.idTipoContacto == id)
+                .Select(t => new TiposContactoResponseDto
+                {
+                    idTipoContacto = t.idTipoContacto,
+                    tipoContacto = t.tipoContacto,
+                    descripcion = t.descripcion
+                }).FirstOrDefaultAsync();
 
-            if (tipoContacto == null)
+            if (tipo == null)
             {
                 return NotFound();
             }
 
-            return tipoContacto;
+            return Ok(tipo);
         }
 
-        // PUT: api/TiposContacto/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutTipoContacto(int id, TipoContacto tipoContacto)
+        public async Task<IActionResult> PutTipoContacto(int id, TiposContactoFormDto tipoDto)
         {
-            if (id != tipoContacto.idTipoContacto)
+            var tipo = await _context.TiposContacto.FindAsync(id);
+            if (tipo == null || tipo.isDeleted)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(tipoContacto).State = EntityState.Modified;
+            tipo.tipoContacto = tipoDto.tipoContacto;
+            tipo.descripcion = tipoDto.descripcion;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!TipoContactoExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            _context.TiposContacto.Update(tipo);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/TiposContacto
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<TipoContacto>> PostTipoContacto(TipoContacto tipoContacto)
+        public async Task<ActionResult<TiposContactoResponseDto>> PostTipoContacto(TiposContactoFormDto tipoDto)
         {
-            _context.TiposContacto.Add(tipoContacto);
+            var tipo = new TipoContacto
+            {
+                tipoContacto = tipoDto.tipoContacto,
+                descripcion = tipoDto.descripcion
+            };
+
+            _context.TiposContacto.Add(tipo);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetTipoContacto", new { id = tipoContacto.idTipoContacto }, tipoContacto);
+            return CreatedAtAction(nameof(GetTipoContacto), new { id = tipo.idTipoContacto }, new TiposContactoResponseDto
+            {
+                idTipoContacto = tipo.idTipoContacto,
+                tipoContacto = tipo.tipoContacto,
+                descripcion = tipo.descripcion
+            });
         }
 
-        // DELETE: api/TiposContacto/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteTipoContacto(int id)
-        //{
-        //    var tipoContacto = await _context.TiposContacto.FindAsync(id);
-        //    if (tipoContacto == null)
-        //    {
-        //        return NotFound();
-        //    }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteTipoContacto(int id)
+        {
+            var tipoContacto = await _context.TiposContacto.FindAsync(id);
+            if (tipoContacto == null || tipoContacto.isDeleted)
+            {
+                return NotFound();
+            }
 
-        //    _context.TiposContacto.Remove(tipoContacto);
-        //    await _context.SaveChangesAsync();
+            tipoContacto.isDeleted = true;
+            _context.TiposContacto.Update(tipoContacto);
+            await _context.SaveChangesAsync();
 
-        //    return NoContent();
-        //}
+            return NoContent();
+        }
 
         private bool TipoContactoExists(int id)
         {

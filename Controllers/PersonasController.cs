@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.Personas;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,84 +16,121 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/Personas
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Persona>>> GetPersonas()
+        public async Task<ActionResult<IEnumerable<PersonasResponseDto>>> GetPersonas()
         {
-            return await _context.Personas.ToListAsync();
+            var personas = await _context.Personas
+                .Include(p => p.tipoIdentificacion)
+                .Include(p => p.estadoPersona)
+                .Where(p => !p.isDeleted)
+                .Select(p => new PersonasResponseDto
+                {
+                    idPersona = p.idPersona,
+                    primerNombre = p.primerNombre,
+                    segundoNombre = p.segundoNombre,
+                    primerApellido = p.primerApellido,
+                    segundoApellido = p.segundoApellido,
+                    numeroIdentificacion = p.numeroIdentificacion,
+                    fechaNacimiento = p.fechaNacimiento,
+                    direccion = p.direccion,
+                    tipoIdentificacion = p.tipoIdentificacion != null ? p.tipoIdentificacion.tipoIdentificacion : null,
+                    estadoPersona = p.estadoPersona != null ? p.estadoPersona.estado : null
+                }).ToListAsync();
+
+            return Ok(personas);
         }
 
-        // GET: api/Personas/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Persona>> GetPersona(int id)
+        public async Task<ActionResult<PersonasResponseDto>> GetPersona(int id)
         {
-            var persona = await _context.Personas.FindAsync(id);
+            var persona = await _context.Personas
+                .Include(p => p.tipoIdentificacion)
+                .Include(p => p.estadoPersona)
+                .Where(p => !p.isDeleted && p.idPersona == id)
+                .Select(p => new PersonasResponseDto
+                {
+                    idPersona = p.idPersona,
+                    primerNombre = p.primerNombre,
+                    segundoNombre = p.segundoNombre,
+                    primerApellido = p.primerApellido,
+                    segundoApellido = p.segundoApellido,
+                    numeroIdentificacion = p.numeroIdentificacion,
+                    fechaNacimiento = p.fechaNacimiento,
+                    direccion = p.direccion,
+                    tipoIdentificacion = p.tipoIdentificacion != null ? p.tipoIdentificacion.tipoIdentificacion : null,
+                    estadoPersona = p.estadoPersona != null ? p.estadoPersona.estado : null
+                }).FirstOrDefaultAsync();
 
             if (persona == null)
             {
                 return NotFound();
             }
 
-            return persona;
+            return Ok(persona);
         }
 
-        // PUT: api/Personas/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutPersona(int id, Persona persona)
+        public async Task<IActionResult> PutPersona(int id, PersonasFormDto personaDto)
         {
-            if (id != persona.idPersona)
+            var persona = await _context.Personas.FindAsync(id);
+            if (persona == null || persona.isDeleted)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(persona).State = EntityState.Modified;
+            persona.primerNombre = personaDto.primerNombre;
+            persona.segundoNombre = personaDto.segundoNombre;
+            persona.primerApellido = personaDto.primerApellido;
+            persona.segundoApellido = personaDto.segundoApellido;
+            persona.numeroIdentificacion = personaDto.numeroIdentificacion;
+            persona.fechaNacimiento = personaDto.fechaNacimiento;
+            persona.direccion = personaDto.direccion;
+            persona.idTipoIdentificacion = personaDto.idTipoIdentificacion;
+            persona.idEstadoPersona = personaDto.idEstadoPersona;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!PersonaExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            _context.Personas.Update(persona);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/Personas
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Persona>> PostPersona(Persona persona)
+        public async Task<ActionResult<PersonasResponseDto>> PostPersona(PersonasFormDto personaDto)
         {
+            var persona = new Persona
+            {
+                primerNombre = personaDto.primerNombre,
+                segundoNombre = personaDto.segundoNombre,
+                primerApellido = personaDto.primerApellido,
+                segundoApellido = personaDto.segundoApellido,
+                numeroIdentificacion = personaDto.numeroIdentificacion,
+                fechaNacimiento = personaDto.fechaNacimiento,
+                direccion = personaDto.direccion,
+                idTipoIdentificacion = personaDto.idTipoIdentificacion,
+                idEstadoPersona = personaDto.idEstadoPersona
+            };
+
             _context.Personas.Add(persona);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetPersona", new { id = persona.idPersona }, persona);
+            return CreatedAtAction(nameof(GetPersona), new { id = persona.idPersona }, persona);
         }
 
-        // DELETE: api/Personas/5
         [HttpDelete("{id}")]
-        //public async Task<IActionResult> DeletePersona(int id)
-        //{
-        //    var persona = await _context.Personas.FindAsync(id);
-        //    if (persona == null)
-        //    {
-        //        return NotFound();
-        //    }
+        public async Task<IActionResult> DeletePersona(int id)
+        {
+            var persona = await _context.Personas.FindAsync(id);
+            if (persona == null || persona.isDeleted)
+            {
+                return NotFound();
+            }
 
-        //    _context.Personas.Remove(persona);
-        //    await _context.SaveChangesAsync();
+            persona.isDeleted = true;
+            _context.Personas.Update(persona);
+            await _context.SaveChangesAsync();
 
-        //    return NoContent();
-        //}
+            return NoContent();
+        }
 
         private bool PersonaExists(int id)
         {

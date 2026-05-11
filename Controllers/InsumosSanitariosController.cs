@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.InsumosSanitarios;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,84 +16,107 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/InsumosSanitarios
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<InsumoSanitario>>> GetInsumosSanitarios()
+        public async Task<ActionResult<IEnumerable<InsumosSanitariosResponseDto>>> GetInsumosSanitarios()
         {
-            return await _context.InsumosSanitarios.ToListAsync();
+            var insumos = await _context.InsumosSanitarios
+                .Include(i => i.tipoInsumo)
+                .Include(i => i.unidadMedida)
+                .Include(i => i.estadoInsumo)
+                .Where(i => !i.isDeleted)
+                .Select(i => new InsumosSanitariosResponseDto
+                {
+                    idInsumoSanitario = i.idInsumoSanitario,
+                    insumoSanitario = i.insumoSanitario,
+                    descripcion = i.descripcion,
+                    tipoInsumo = i.tipoInsumo != null ? i.tipoInsumo.tipoInsumo : null,
+                    unidadMedida = i.unidadMedida != null ? i.unidadMedida.unidadMedida : null,
+                    estadoInsumo = i.estadoInsumo != null ? i.estadoInsumo.estado : null
+                }).ToListAsync();
+
+            return Ok(insumos);
         }
 
-        // GET: api/InsumosSanitarios/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<InsumoSanitario>> GetInsumoSanitario(int id)
+        public async Task<ActionResult<InsumosSanitariosResponseDto>> GetInsumoSanitario(int id)
         {
-            var insumoSanitario = await _context.InsumosSanitarios.FindAsync(id);
+            var insumo = await _context.InsumosSanitarios
+                .Include(i => i.tipoInsumo)
+                .Include(i => i.unidadMedida)
+                .Include(i => i.estadoInsumo)
+                .Where(i => !i.isDeleted && i.idInsumoSanitario == id)
+                .Select(i => new InsumosSanitariosResponseDto
+                {
+                    idInsumoSanitario = i.idInsumoSanitario,
+                    insumoSanitario = i.insumoSanitario,
+                    descripcion = i.descripcion,
+                    tipoInsumo = i.tipoInsumo != null ? i.tipoInsumo.tipoInsumo : null,
+                    unidadMedida = i.unidadMedida != null ? i.unidadMedida.unidadMedida : null,
+                    estadoInsumo = i.estadoInsumo != null ? i.estadoInsumo.estado : null
+                }).FirstOrDefaultAsync();
 
-            if (insumoSanitario == null)
+            if (insumo == null)
             {
                 return NotFound();
             }
 
-            return insumoSanitario;
+            return Ok(insumo);
         }
 
-        // PUT: api/InsumosSanitarios/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutInsumoSanitario(int id, InsumoSanitario insumoSanitario)
+        public async Task<IActionResult> PutInsumoSanitario(int id, InsumosSanitariosFormDto insumoDto)
         {
-            if (id != insumoSanitario.idInsumoSanitario)
+            var insumo = await _context.InsumosSanitarios.FindAsync(id);
+            if (insumo == null || insumo.isDeleted)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(insumoSanitario).State = EntityState.Modified;
+            insumo.insumoSanitario = insumoDto.insumoSanitario;
+            insumo.descripcion = insumoDto.descripcion;
+            insumo.idTipoInsumo = insumoDto.idTipoInsumo;
+            insumo.idUnidadMedida = insumoDto.idUnidadMedida;
+            insumo.idEstadoInsumo = insumoDto.idEstadoInsumo;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!InsumoSanitarioExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            _context.InsumosSanitarios.Update(insumo);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/InsumosSanitarios
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<InsumoSanitario>> PostInsumoSanitario(InsumoSanitario insumoSanitario)
+        public async Task<ActionResult<InsumosSanitariosResponseDto>> PostInsumoSanitario(InsumosSanitariosFormDto insumoDto)
         {
-            _context.InsumosSanitarios.Add(insumoSanitario);
+            var insumo = new InsumoSanitario
+            {
+                insumoSanitario = insumoDto.insumoSanitario,
+                descripcion = insumoDto.descripcion,
+                idTipoInsumo = insumoDto.idTipoInsumo,
+                idUnidadMedida = insumoDto.idUnidadMedida,
+                idEstadoInsumo = insumoDto.idEstadoInsumo
+            };
+
+            _context.InsumosSanitarios.Add(insumo);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetInsumoSanitario", new { id = insumoSanitario.idInsumoSanitario }, insumoSanitario);
+            return CreatedAtAction(nameof(GetInsumoSanitario), new { id = insumo.idInsumoSanitario }, insumo);
         }
 
-        // DELETE: api/InsumosSanitarios/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteInsumoSanitario(int id)
-        //{
-        //    var insumoSanitario = await _context.InsumosSanitarios.FindAsync(id);
-        //    if (insumoSanitario == null)
-        //    {
-        //        return NotFound();
-        //    }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteInsumoSanitario(int id)
+        {
+            var insumoSanitario = await _context.InsumosSanitarios.FindAsync(id);
+            if (insumoSanitario == null || insumoSanitario.isDeleted)
+            {
+                return NotFound();
+            }
 
-        //    _context.InsumosSanitarios.Remove(insumoSanitario);
-        //    await _context.SaveChangesAsync();
+            insumoSanitario.isDeleted = true;
+            _context.InsumosSanitarios.Update(insumoSanitario);
+            await _context.SaveChangesAsync();
 
-        //    return NoContent();
-        //}
+            return NoContent();
+        }
 
         private bool InsumoSanitarioExists(int id)
         {

@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.BrigadasVeterinarios;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,84 +16,101 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/BrigadasVeterinarios
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<BrigadaVeterinario>>> GetBrigadasVeterinario()
+        public async Task<ActionResult<IEnumerable<BrigadasVeterinariosResponseDto>>> GetBrigadasVeterinario()
         {
-            return await _context.BrigadasVeterinario.ToListAsync();
+            var registros = await _context.BrigadasVeterinario
+                .Include(b => b.veterinario)
+                    .ThenInclude(v => v!.persona)
+                .Include(b => b.brigadas)
+                .Include(b => b.rolParticipacion)
+                .Where(b => !b.isDeleted)
+                .Select(b => new BrigadasVeterinariosResponseDto
+                {
+                    idBrigadaVeterinario = b.idBrigadaVeterinario,
+                    veterinario = b.veterinario != null && b.veterinario.persona != null ? b.veterinario.persona.primerNombre + " " + b.veterinario.persona.primerApellido : null,
+                    brigada = b.brigadas != null ? b.brigadas.nombreBrigada : null,
+                    rolParticipacion = b.rolParticipacion != null ? b.rolParticipacion.rolParticipacion : null
+                }).ToListAsync();
+
+            return Ok(registros);
         }
 
-        // GET: api/BrigadasVeterinarios/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<BrigadaVeterinario>> GetBrigadaVeterinario(int id)
+        public async Task<ActionResult<BrigadasVeterinariosResponseDto>> GetBrigadaVeterinario(int id)
         {
-            var brigadaVeterinario = await _context.BrigadasVeterinario.FindAsync(id);
+            var registro = await _context.BrigadasVeterinario
+                .Include(b => b.veterinario)
+                    .ThenInclude(v => v!.persona)
+                .Include(b => b.brigadas)
+                .Include(b => b.rolParticipacion)
+                .Where(b => !b.isDeleted && b.idBrigadaVeterinario == id)
+                .Select(b => new BrigadasVeterinariosResponseDto
+                {
+                    idBrigadaVeterinario = b.idBrigadaVeterinario,
+                    veterinario = b.veterinario != null && b.veterinario.persona != null ? b.veterinario.persona.primerNombre + " " + b.veterinario.persona.primerApellido : null,
+                    brigada = b.brigadas != null ? b.brigadas.nombreBrigada : null,
+                    rolParticipacion = b.rolParticipacion != null ? b.rolParticipacion.rolParticipacion : null
+                }).FirstOrDefaultAsync();
 
-            if (brigadaVeterinario == null)
+            if (registro == null)
             {
                 return NotFound();
             }
 
-            return brigadaVeterinario;
+            return Ok(registro);
         }
 
-        // PUT: api/BrigadasVeterinarios/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutBrigadaVeterinario(int id, BrigadaVeterinario brigadaVeterinario)
+        public async Task<IActionResult> PutBrigadaVeterinario(int id, BrigadasVeterinariosFormDto registroDto)
         {
-            if (id != brigadaVeterinario.idBrigadaVeterinario)
+            var registro = await _context.BrigadasVeterinario.FindAsync(id);
+            if (registro == null || registro.isDeleted)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(brigadaVeterinario).State = EntityState.Modified;
+            registro.idVeterinario = registroDto.idVeterinario;
+            registro.idBrigada = registroDto.idBrigada;
+            registro.idRolParticipacion = registroDto.idRolParticipacion;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!BrigadaVeterinarioExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            _context.BrigadasVeterinario.Update(registro);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/BrigadasVeterinarios
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<BrigadaVeterinario>> PostBrigadaVeterinario(BrigadaVeterinario brigadaVeterinario)
+        public async Task<ActionResult<BrigadasVeterinariosResponseDto>> PostBrigadaVeterinario(BrigadasVeterinariosFormDto registroDto)
         {
-            _context.BrigadasVeterinario.Add(brigadaVeterinario);
+            var registro = new BrigadaVeterinario
+            {
+                idVeterinario = registroDto.idVeterinario,
+                idBrigada = registroDto.idBrigada,
+                idRolParticipacion = registroDto.idRolParticipacion
+            };
+
+            _context.BrigadasVeterinario.Add(registro);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetBrigadaVeterinario", new { id = brigadaVeterinario.idBrigadaVeterinario }, brigadaVeterinario);
+            return CreatedAtAction(nameof(GetBrigadaVeterinario), new { id = registro.idBrigadaVeterinario }, registro);
         }
 
-        // DELETE: api/BrigadasVeterinarios/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteBrigadaVeterinario(int id)
-        //{
-        //    var brigadaVeterinario = await _context.BrigadasVeterinario.FindAsync(id);
-        //    if (brigadaVeterinario == null)
-        //    {
-        //        return NotFound();
-        //    }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteBrigadaVeterinario(int id)
+        {
+            var registro = await _context.BrigadasVeterinario.FindAsync(id);
+            if (registro == null || registro.isDeleted)
+            {
+                return NotFound();
+            }
 
-        //    _context.BrigadasVeterinario.Remove(brigadaVeterinario);
-        //    await _context.SaveChangesAsync();
+            registro.isDeleted = true;
+            _context.BrigadasVeterinario.Update(registro);
+            await _context.SaveChangesAsync();
 
-        //    return NoContent();
-        //}
+            return NoContent();
+        }
 
         private bool BrigadaVeterinarioExists(int id)
         {

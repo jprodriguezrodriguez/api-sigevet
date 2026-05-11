@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.Tutores;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,66 +16,85 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/Tutores
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Tutor>>> GetTutores()
+        public async Task<ActionResult<IEnumerable<TutoresResponseDto>>> GetTutores()
         {
-            return await _context.Tutores
+            var tutores = await _context.Tutores
                 .Include(t => t.persona)
                 .Include(t => t.estadoTutor)
-                .ToListAsync();
+                .Where(t => t.persona == null || !t.persona.isDeleted)
+                .Select(t => new TutoresResponseDto
+                {
+                    idPersonaTut = t.idPersonaTut,
+                    autorizaNotificaciones = t.autorizaNotificaciones,
+                    fechaRegistroTutor = t.fechaRegistroTutor,
+                    fechaActualizacionTutor = t.fechaActualizacionTutor,
+                    persona = t.persona != null ? t.persona.primerNombre + " " + t.persona.primerApellido : null,
+                    estadoTutor = t.estadoTutor != null ? t.estadoTutor.estado : null
+                }).ToListAsync();
+
+            return Ok(tutores);
         }
 
-        // GET: api/Tutores/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Tutor>> GetTutor(int id)
+        public async Task<ActionResult<TutoresResponseDto>> GetTutor(int id)
         {
-            var tutor = await _context.Tutores.FindAsync(id);
+            var tutor = await _context.Tutores
+                .Include(t => t.persona)
+                .Include(t => t.estadoTutor)
+                .Where(t => t.idPersonaTut == id && (t.persona == null || !t.persona.isDeleted))
+                .Select(t => new TutoresResponseDto
+                {
+                    idPersonaTut = t.idPersonaTut,
+                    autorizaNotificaciones = t.autorizaNotificaciones,
+                    fechaRegistroTutor = t.fechaRegistroTutor,
+                    fechaActualizacionTutor = t.fechaActualizacionTutor,
+                    persona = t.persona != null ? t.persona.primerNombre + " " + t.persona.primerApellido : null,
+                    estadoTutor = t.estadoTutor != null ? t.estadoTutor.estado : null
+                }).FirstOrDefaultAsync();
 
             if (tutor == null)
             {
                 return NotFound();
             }
 
-            return tutor;
+            return Ok(tutor);
         }
 
-        // PUT: api/Tutores/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutTutor(int id, Tutor tutor)
+        public async Task<IActionResult> PutTutor(int id, TutoresFormDto tutorDto)
         {
-            if (id != tutor.idPersonaTut)
+            if (id != tutorDto.idPersonaTut)
             {
                 return BadRequest();
             }
 
-            _context.Entry(tutor).State = EntityState.Modified;
+            var tutor = await _context.Tutores.FindAsync(id);
+            if (tutor == null)
+            {
+                return NotFound();
+            }
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!TutorExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            tutor.autorizaNotificaciones = tutorDto.autorizaNotificaciones;
+            tutor.idEstadoTutor = tutorDto.idEstadoTutor;
+            tutor.fechaActualizacionTutor = DateTime.Now;
+
+            _context.Tutores.Update(tutor);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/Tutores
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Tutor>> PostTutor(Tutor tutor)
+        public async Task<ActionResult<TutoresResponseDto>> PostTutor(TutoresFormDto tutorDto)
         {
+            var tutor = new Tutor
+            {
+                idPersonaTut = tutorDto.idPersonaTut,
+                autorizaNotificaciones = tutorDto.autorizaNotificaciones,
+                idEstadoTutor = tutorDto.idEstadoTutor
+            };
+
             _context.Tutores.Add(tutor);
             try
             {
@@ -91,30 +106,12 @@ namespace sigevet.Controllers
                 {
                     return Conflict();
                 }
-                else
-                {
-                    throw;
-                }
+
+                throw;
             }
 
-            return CreatedAtAction("GetTutor", new { id = tutor.idPersonaTut }, tutor);
+            return CreatedAtAction(nameof(GetTutor), new { id = tutor.idPersonaTut }, tutor);
         }
-
-        // DELETE: api/Tutores/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteTutor(int id)
-        //{
-        //    var tutor = await _context.Tutores.FindAsync(id);
-        //    if (tutor == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    _context.Tutores.Remove(tutor);
-        //    await _context.SaveChangesAsync();
-
-        //    return NoContent();
-        //}
 
         private bool TutorExists(int id)
         {

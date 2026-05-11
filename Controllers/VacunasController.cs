@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.Vacunas;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,84 +16,115 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/Vacunas
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Vacuna>>> GetVacunas()
+        public async Task<ActionResult<IEnumerable<VacunasResponseDto>>> GetVacunas()
         {
-            return await _context.Vacunas.ToListAsync();
+            var vacunas = await _context.Vacunas
+                .Include(v => v.tipoVacuna)
+                .Include(v => v.laboratorio)
+                .Include(v => v.estadoVacuna)
+                .Where(v => !v.isDeleted)
+                .Select(v => new VacunasResponseDto
+                {
+                    idVacuna = v.idVacuna,
+                    nombre = v.nombre,
+                    numeroLote = v.numeroLote,
+                    fechaFabricacion = v.fechaFabricacion,
+                    fechaVencimiento = v.fechaVencimiento,
+                    tipoVacuna = v.tipoVacuna != null ? v.tipoVacuna.tipoVacuna : null,
+                    laboratorio = v.laboratorio != null ? v.laboratorio.laboratorio : null,
+                    estadoVacuna = v.estadoVacuna != null ? v.estadoVacuna.estado : null
+                }).ToListAsync();
+
+            return Ok(vacunas);
         }
 
-        // GET: api/Vacunas/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Vacuna>> GetVacuna(int id)
+        public async Task<ActionResult<VacunasResponseDto>> GetVacuna(int id)
         {
-            var vacuna = await _context.Vacunas.FindAsync(id);
+            var vacuna = await _context.Vacunas
+                .Include(v => v.tipoVacuna)
+                .Include(v => v.laboratorio)
+                .Include(v => v.estadoVacuna)
+                .Where(v => !v.isDeleted && v.idVacuna == id)
+                .Select(v => new VacunasResponseDto
+                {
+                    idVacuna = v.idVacuna,
+                    nombre = v.nombre,
+                    numeroLote = v.numeroLote,
+                    fechaFabricacion = v.fechaFabricacion,
+                    fechaVencimiento = v.fechaVencimiento,
+                    tipoVacuna = v.tipoVacuna != null ? v.tipoVacuna.tipoVacuna : null,
+                    laboratorio = v.laboratorio != null ? v.laboratorio.laboratorio : null,
+                    estadoVacuna = v.estadoVacuna != null ? v.estadoVacuna.estado : null
+                }).FirstOrDefaultAsync();
 
             if (vacuna == null)
             {
                 return NotFound();
             }
 
-            return vacuna;
+            return Ok(vacuna);
         }
 
-        // PUT: api/Vacunas/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutVacuna(int id, Vacuna vacuna)
+        public async Task<IActionResult> PutVacuna(int id, VacunasFormDto vacunaDto)
         {
-            if (id != vacuna.idVacuna)
+            var vacuna = await _context.Vacunas.FindAsync(id);
+            if (vacuna == null || vacuna.isDeleted)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(vacuna).State = EntityState.Modified;
+            vacuna.nombre = vacunaDto.nombre;
+            vacuna.numeroLote = vacunaDto.numeroLote;
+            vacuna.fechaFabricacion = vacunaDto.fechaFabricacion;
+            vacuna.fechaVencimiento = vacunaDto.fechaVencimiento;
+            vacuna.idTipoVacuna = vacunaDto.idTipoVacuna;
+            vacuna.idLaboratorio = vacunaDto.idLaboratorio;
+            vacuna.idEstadoVacuna = vacunaDto.idEstadoVacuna;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!VacunaExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            _context.Vacunas.Update(vacuna);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/Vacunas
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Vacuna>> PostVacuna(Vacuna vacuna)
+        public async Task<ActionResult<VacunasResponseDto>> PostVacuna(VacunasFormDto vacunaDto)
         {
+            var vacuna = new Vacuna
+            {
+                nombre = vacunaDto.nombre,
+                numeroLote = vacunaDto.numeroLote,
+                fechaFabricacion = vacunaDto.fechaFabricacion,
+                fechaVencimiento = vacunaDto.fechaVencimiento,
+                idTipoVacuna = vacunaDto.idTipoVacuna,
+                idLaboratorio = vacunaDto.idLaboratorio,
+                idEstadoVacuna = vacunaDto.idEstadoVacuna
+            };
+
             _context.Vacunas.Add(vacuna);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetVacuna", new { id = vacuna.idVacuna }, vacuna);
+            return CreatedAtAction(nameof(GetVacuna), new { id = vacuna.idVacuna }, vacuna);
         }
 
-        // DELETE: api/Vacunas/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteVacuna(int id)
-        //{
-        //    var vacuna = await _context.Vacunas.FindAsync(id);
-        //    if (vacuna == null)
-        //    {
-        //        return NotFound();
-        //    }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteVacuna(int id)
+        {
+            var vacuna = await _context.Vacunas.FindAsync(id);
+            if (vacuna == null || vacuna.isDeleted)
+            {
+                return NotFound();
+            }
 
-        //    _context.Vacunas.Remove(vacuna);
-        //    await _context.SaveChangesAsync();
+            vacuna.isDeleted = true;
+            _context.Vacunas.Update(vacuna);
+            await _context.SaveChangesAsync();
 
-        //    return NoContent();
-        //}
+            return NoContent();
+        }
 
         private bool VacunaExists(int id)
         {

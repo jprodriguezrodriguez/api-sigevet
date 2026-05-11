@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.Razas;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,100 +16,116 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/Razas
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Raza>>> GetRazas()
+        public async Task<ActionResult<IEnumerable<RazasResponseDto>>> GetRazas()
         {
-            return await _context.Razas.ToListAsync();
+            var razas = await _context.Razas
+                .Include(r => r.especie)
+                .Where(r => !r.isDeleted)
+                .Select(r => new RazasResponseDto
+                {
+                    idRaza = r.idRaza,
+                    raza = r.raza,
+                    descripcion = r.descripcion,
+                    especie = r.especie.especie
+                }).ToListAsync();
+
+            return Ok(razas);
         }
 
-        // GET: api/Razas/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Raza>> GetRaza(int id)
+        public async Task<ActionResult<RazasResponseDto>> GetRaza(int id)
         {
-            var raza = await _context.Razas.FindAsync(id);
+            var raza = await _context.Razas
+                .Include(r => r.especie)
+                .Where(r => !r.isDeleted && r.idRaza == id)
+                .Select(r => new RazasResponseDto
+                {
+                    idRaza = r.idRaza,
+                    raza = r.raza,
+                    descripcion = r.descripcion,
+                    especie = r.especie.especie
+                }).FirstOrDefaultAsync();
 
             if (raza == null)
             {
                 return NotFound();
             }
 
-            return raza;
+            return Ok(raza);
         }
 
-        // PUT: api/Razas/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutRaza(int id, Raza raza)
+        public async Task<IActionResult> PutRaza(int id, RazasFormDto razaDto)
         {
-            if (id != raza.idRaza)
+            var raza = await _context.Razas.FindAsync(id);
+            if (raza == null || raza.isDeleted)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(raza).State = EntityState.Modified;
+            raza.raza = razaDto.raza;
+            raza.descripcion = razaDto.descripcion;
+            raza.idEspecie = razaDto.idEspecie;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!RazaExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            _context.Razas.Update(raza);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/Razas
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Raza>> PostRaza(Raza raza)
+        public async Task<ActionResult<RazasResponseDto>> PostRaza(RazasFormDto razaDto)
         {
+            var raza = new Raza
+            {
+                idRaza = 0,
+                raza = razaDto.raza,
+                descripcion = razaDto.descripcion,
+                idEspecie = razaDto.idEspecie
+            };
+
             _context.Razas.Add(raza);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetRaza", new { id = raza.idRaza }, raza);
+            return CreatedAtAction(nameof(GetRaza), new { id = raza.idRaza }, raza);
         }
 
-        // DELETE: api/Razas/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteRaza(int id)
-        //{
-        //    var raza = await _context.Razas.FindAsync(id);
-        //    if (raza == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    _context.Razas.Remove(raza);
-        //    await _context.SaveChangesAsync();
-
-        //    return NoContent();
-        //}
-
-        // GET: api/Razas/razas-por-especie/2
-        [HttpGet("razas-por-especie/{id}")]
-        public async Task<ActionResult<IEnumerable<Raza>>> GetRazasPorEspecie(int id)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteRaza(int id)
         {
-            var razaExiste = await _context.Razas
-                .AnyAsync(c => c.idEspecie == id);
-
-            if (!razaExiste)
+            var raza = await _context.Razas.FindAsync(id);
+            if (raza == null || raza.isDeleted)
             {
-                return NotFound($"No existen Razas para la especie con ID {id}.");
+                return NotFound();
+            }
+
+            raza.isDeleted = true;
+            _context.Razas.Update(raza);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        [HttpGet("razas-por-especie/{id}")]
+        public async Task<ActionResult<IEnumerable<RazasResponseDto>>> GetRazasPorEspecie(int id)
+        {
+            var especieExiste = await _context.Especies.AnyAsync(e => e.idEspecie == id && !e.isDeleted);
+            if (!especieExiste)
+            {
+                return NotFound($"No existe una especie con ID {id}.");
             }
 
             var razas = await _context.Razas
-                .Where(e => e.idEspecie == id)
-                .ToListAsync();
+                .Include(r => r.especie)
+                .Where(r => r.idEspecie == id && !r.isDeleted)
+                .Select(r => new RazasResponseDto
+                {
+                    idRaza = r.idRaza,
+                    raza = r.raza,
+                    descripcion = r.descripcion,
+                    especie = r.especie.especie
+                }).ToListAsync();
 
             return Ok(razas);
         }

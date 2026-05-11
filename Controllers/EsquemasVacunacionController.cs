@@ -30,6 +30,7 @@ namespace sigevet.Controllers
                     .ThenInclude(v => v.mascota)
                     .ThenInclude(r => r.raza)
                 .Include(ev => ev.tipoVacuna)
+                .Where(ev => !ev.isDeleted)
                 .ToListAsync();
 
             var resultado = esquemasVacunacion.Select(ev => new EsquemasVacunacionResponseDto
@@ -39,6 +40,7 @@ namespace sigevet.Controllers
                 intervaloDias = ev.intervaloDias,
                 edadMinimaDias = ev.edadMinimaDias,
                 observaciones = ev.observaciones,
+                idTipoVacuna = ev.idTipoVacuna,
                 tipoVacuna = ev.tipoVacuna != null ? ev.tipoVacuna.tipoVacuna : "",
                 vacunaciones = ev.vacunaciones.Select(v => new VacunacionesResponseDto
                 {
@@ -79,7 +81,7 @@ namespace sigevet.Controllers
                     .ThenInclude(v => v.mascota)
                     .ThenInclude(r => r.raza)
                 .Include(ev => ev.tipoVacuna)
-                .Where(ev => ev.idEsquemaVacunacion == id)
+                .Where(ev => ev.idEsquemaVacunacion == id && !ev.isDeleted)
                 .ToListAsync();
 
             var resultado = esquemasVacunacion.Select(ev => new EsquemasVacunacionResponseDto
@@ -89,6 +91,7 @@ namespace sigevet.Controllers
                 intervaloDias = ev.intervaloDias,
                 edadMinimaDias = ev.edadMinimaDias,
                 observaciones = ev.observaciones,
+                idTipoVacuna = ev.idTipoVacuna,
                 tipoVacuna = ev.tipoVacuna != null ? ev.tipoVacuna.tipoVacuna : "",
                 vacunaciones = ev.vacunaciones.Select(v => new VacunacionesResponseDto
                 {
@@ -126,30 +129,22 @@ namespace sigevet.Controllers
         // PUT: api/EsquemasVacunacion/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutEsquemaVacunacion(int id, EsquemaVacunacion esquemaVacunacion)
+        public async Task<IActionResult> PutEsquemaVacunacion(int id, EsquemasVacunacionFormDto esquemaVacunacionDto)
         {
-            if (id != esquemaVacunacion.idEsquemaVacunacion)
+            var esquemaVacunacion = await _context.EsquemasVacunacion.FindAsync(id);
+            if (esquemaVacunacion == null || esquemaVacunacion.isDeleted)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(esquemaVacunacion).State = EntityState.Modified;
+            esquemaVacunacion.esquemaVacunacion = esquemaVacunacionDto.esquemaVacunacion;
+            esquemaVacunacion.intervaloDias = esquemaVacunacionDto.intervaloDias;
+            esquemaVacunacion.edadMinimaDias = esquemaVacunacionDto.edadMinimaDias;
+            esquemaVacunacion.observaciones = esquemaVacunacionDto.observaciones;
+            esquemaVacunacion.idTipoVacuna = esquemaVacunacionDto.idTipoVacuna;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!EsquemaVacunacionExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            _context.EsquemasVacunacion.Update(esquemaVacunacion);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
@@ -157,8 +152,17 @@ namespace sigevet.Controllers
         // POST: api/EsquemasVacunacion
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<EsquemaVacunacion>> PostEsquemaVacunacion(EsquemaVacunacion esquemaVacunacion)
+        public async Task<ActionResult<EsquemasVacunacionResponseDto>> PostEsquemaVacunacion(EsquemasVacunacionFormDto esquemaVacunacionDto)
         {
+            var esquemaVacunacion = new EsquemaVacunacion
+            {
+                esquemaVacunacion = esquemaVacunacionDto.esquemaVacunacion,
+                intervaloDias = esquemaVacunacionDto.intervaloDias,
+                edadMinimaDias = esquemaVacunacionDto.edadMinimaDias,
+                observaciones = esquemaVacunacionDto.observaciones,
+                idTipoVacuna = esquemaVacunacionDto.idTipoVacuna
+            };
+
             _context.EsquemasVacunacion.Add(esquemaVacunacion);
             await _context.SaveChangesAsync();
 
@@ -189,11 +193,6 @@ namespace sigevet.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        private bool EsquemaVacunacionExists(int id)
-        {
-            return _context.EsquemasVacunacion.Any(e => e.idEsquemaVacunacion == id);
         }
     }
 }

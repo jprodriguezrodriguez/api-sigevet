@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.Laboratorios;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,84 +16,93 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/Laboratorios
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Laboratorio>>> GetLaboratorios()
+        public async Task<ActionResult<IEnumerable<LaboratoriosResponseDto>>> GetLaboratorios()
         {
-            return await _context.Laboratorios.ToListAsync();
+            var laboratorios = await _context.Laboratorios
+                .Where(l => !l.isDeleted)
+                .Select(l => new LaboratoriosResponseDto
+                {
+                    idLaboratorio = l.idLaboratorio,
+                    laboratorio = l.laboratorio,
+                    descripcion = l.descripcion,
+                    direccion = l.direccion
+                }).ToListAsync();
+
+            return Ok(laboratorios);
         }
 
-        // GET: api/Laboratorios/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Laboratorio>> GetLaboratorio(int id)
+        public async Task<ActionResult<LaboratoriosResponseDto>> GetLaboratorio(int id)
         {
-            var laboratorio = await _context.Laboratorios.FindAsync(id);
+            var laboratorio = await _context.Laboratorios
+                .Where(l => !l.isDeleted && l.idLaboratorio == id)
+                .Select(l => new LaboratoriosResponseDto
+                {
+                    idLaboratorio = l.idLaboratorio,
+                    laboratorio = l.laboratorio,
+                    descripcion = l.descripcion,
+                    direccion = l.direccion
+                }).FirstOrDefaultAsync();
 
             if (laboratorio == null)
             {
                 return NotFound();
             }
 
-            return laboratorio;
+            return Ok(laboratorio);
         }
 
-        // PUT: api/Laboratorios/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutLaboratorio(int id, Laboratorio laboratorio)
+        public async Task<IActionResult> PutLaboratorio(int id, LaboratoriosFormDto laboratorioDto)
         {
-            if (id != laboratorio.idLaboratorio)
+            var laboratorio = await _context.Laboratorios.FindAsync(id);
+            if (laboratorio == null || laboratorio.isDeleted)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(laboratorio).State = EntityState.Modified;
+            laboratorio.laboratorio = laboratorioDto.laboratorio;
+            laboratorio.descripcion = laboratorioDto.descripcion;
+            laboratorio.direccion = laboratorioDto.direccion;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!LaboratorioExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            _context.Laboratorios.Update(laboratorio);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/Laboratorios
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Laboratorio>> PostLaboratorio(Laboratorio laboratorio)
+        public async Task<ActionResult<LaboratoriosResponseDto>> PostLaboratorio(LaboratoriosFormDto laboratorioDto)
         {
+            var laboratorio = new Laboratorio
+            {
+                laboratorio = laboratorioDto.laboratorio,
+                descripcion = laboratorioDto.descripcion,
+                direccion = laboratorioDto.direccion
+            };
+
             _context.Laboratorios.Add(laboratorio);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetLaboratorio", new { id = laboratorio.idLaboratorio }, laboratorio);
+            return CreatedAtAction(nameof(GetLaboratorio), new { id = laboratorio.idLaboratorio }, laboratorio);
         }
 
-        // DELETE: api/Laboratorios/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteLaboratorio(int id)
-        //{
-        //    var laboratorio = await _context.Laboratorios.FindAsync(id);
-        //    if (laboratorio == null)
-        //    {
-        //        return NotFound();
-        //    }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteLaboratorio(int id)
+        {
+            var laboratorio = await _context.Laboratorios.FindAsync(id);
+            if (laboratorio == null || laboratorio.isDeleted)
+            {
+                return NotFound();
+            }
 
-        //    _context.Laboratorios.Remove(laboratorio);
-        //    await _context.SaveChangesAsync();
+            laboratorio.isDeleted = true;
+            _context.Laboratorios.Update(laboratorio);
+            await _context.SaveChangesAsync();
 
-        //    return NoContent();
-        //}
+            return NoContent();
+        }
 
         private bool LaboratorioExists(int id)
         {

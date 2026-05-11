@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.Especies;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,84 +16,90 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/Especies
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Especie>>> GetEspecies()
+        public async Task<ActionResult<IEnumerable<EspeciesResponseDto>>> GetEspecies()
         {
-            return await _context.Especies.ToListAsync();
+            var especies = await _context.Especies
+                .Where(e => !e.isDeleted)
+                .Select(e => new EspeciesResponseDto
+                {
+                    idEspecie = e.idEspecie,
+                    especie = e.especie,
+                    descripcion = e.descripcion
+                }).ToListAsync();
+
+            return Ok(especies);
         }
 
-        // GET: api/Especies/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Especie>> GetEspecie(int id)
+        public async Task<ActionResult<EspeciesResponseDto>> GetEspecie(int id)
         {
-            var especie = await _context.Especies.FindAsync(id);
+            var especie = await _context.Especies
+                .Where(e => !e.isDeleted && e.idEspecie == id)
+                .Select(e => new EspeciesResponseDto
+                {
+                    idEspecie = e.idEspecie,
+                    especie = e.especie,
+                    descripcion = e.descripcion
+                }).FirstOrDefaultAsync();
 
             if (especie == null)
             {
                 return NotFound();
             }
 
-            return especie;
+            return Ok(especie);
         }
 
-        // PUT: api/Especies/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutEspecie(int id, Especie especie)
+        public async Task<IActionResult> PutEspecie(int id, EspeciesFormDto especieDto)
         {
-            if (id != especie.idEspecie)
+            var especie = await _context.Especies.FindAsync(id);
+            if (especie == null || especie.isDeleted)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(especie).State = EntityState.Modified;
+            especie.especie = especieDto.especie;
+            especie.descripcion = especieDto.descripcion;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!EspecieExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            _context.Especies.Update(especie);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/Especies
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Especie>> PostEspecie(Especie especie)
+        public async Task<ActionResult<EspeciesResponseDto>> PostEspecie(EspeciesFormDto especieDto)
         {
+            var especie = new Especie
+            {
+                idEspecie = 0,
+                especie = especieDto.especie,
+                descripcion = especieDto.descripcion
+            };
+
             _context.Especies.Add(especie);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetEspecie", new { id = especie.idEspecie }, especie);
+            return CreatedAtAction(nameof(GetEspecie), new { id = especie.idEspecie }, especie);
         }
 
-        // DELETE: api/Especies/5
         [HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteEspecie(int id)
-        //{
-        //    var especie = await _context.Especies.FindAsync(id);
-        //    if (especie == null)
-        //    {
-        //        return NotFound();
-        //    }
+        public async Task<IActionResult> DeleteEspecie(int id)
+        {
+            var especie = await _context.Especies.FindAsync(id);
+            if (especie == null || especie.isDeleted)
+            {
+                return NotFound();
+            }
 
-        //    _context.Especies.Remove(especie);
-        //    await _context.SaveChangesAsync();
+            especie.isDeleted = true;
+            _context.Especies.Update(especie);
+            await _context.SaveChangesAsync();
 
-        //    return NoContent();
-        //}
+            return NoContent();
+        }
 
         private bool EspecieExists(int id)
         {

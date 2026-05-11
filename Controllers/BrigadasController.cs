@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.Brigadas;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,84 +16,115 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/Brigadas
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Brigada>>> GetBrigadas()
+        public async Task<ActionResult<IEnumerable<BrigadasResponseDto>>> GetBrigadas()
         {
-            return await _context.Brigadas.ToListAsync();
+            var brigadas = await _context.Brigadas
+                .Include(b => b.estadoBrigada)
+                .Where(b => !b.isDeleted)
+                .Select(b => new BrigadasResponseDto
+                {
+                    idBrigada = b.idBrigada,
+                    nombreBrigada = b.nombreBrigada,
+                    fechaBrigada = b.fechaBrigada,
+                    horaInicio = b.horaInicio,
+                    horaFin = b.horaFin,
+                    ubicacion = b.ubicacion,
+                    cobertura = b.cobertura,
+                    observaciones = b.observaciones,
+                    estadoBrigada = b.estadoBrigada != null ? b.estadoBrigada.estado : null
+                }).ToListAsync();
+
+            return Ok(brigadas);
         }
 
-        // GET: api/Brigadas/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Brigada>> GetBrigada(int id)
+        public async Task<ActionResult<BrigadasResponseDto>> GetBrigada(int id)
         {
-            var brigada = await _context.Brigadas.FindAsync(id);
+            var brigada = await _context.Brigadas
+                .Include(b => b.estadoBrigada)
+                .Where(b => !b.isDeleted && b.idBrigada == id)
+                .Select(b => new BrigadasResponseDto
+                {
+                    idBrigada = b.idBrigada,
+                    nombreBrigada = b.nombreBrigada,
+                    fechaBrigada = b.fechaBrigada,
+                    horaInicio = b.horaInicio,
+                    horaFin = b.horaFin,
+                    ubicacion = b.ubicacion,
+                    cobertura = b.cobertura,
+                    observaciones = b.observaciones,
+                    estadoBrigada = b.estadoBrigada != null ? b.estadoBrigada.estado : null
+                }).FirstOrDefaultAsync();
 
             if (brigada == null)
             {
                 return NotFound();
             }
 
-            return brigada;
+            return Ok(brigada);
         }
 
-        // PUT: api/Brigadas/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutBrigada(int id, Brigada brigada)
+        public async Task<IActionResult> PutBrigada(int id, BrigadasFormDto brigadaDto)
         {
-            if (id != brigada.idBrigada)
+            var brigada = await _context.Brigadas.FindAsync(id);
+            if (brigada == null || brigada.isDeleted)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(brigada).State = EntityState.Modified;
+            brigada.nombreBrigada = brigadaDto.nombreBrigada;
+            brigada.fechaBrigada = brigadaDto.fechaBrigada;
+            brigada.horaInicio = brigadaDto.horaInicio;
+            brigada.horaFin = brigadaDto.horaFin;
+            brigada.ubicacion = brigadaDto.ubicacion;
+            brigada.cobertura = brigadaDto.cobertura;
+            brigada.observaciones = brigadaDto.observaciones;
+            brigada.idEstadoBrigada = brigadaDto.idEstadoBrigada;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!BrigadaExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            _context.Brigadas.Update(brigada);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/Brigadas
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Brigada>> PostBrigada(Brigada brigada)
+        public async Task<ActionResult<BrigadasResponseDto>> PostBrigada(BrigadasFormDto brigadaDto)
         {
+            var brigada = new Brigada
+            {
+                nombreBrigada = brigadaDto.nombreBrigada,
+                fechaBrigada = brigadaDto.fechaBrigada,
+                horaInicio = brigadaDto.horaInicio,
+                horaFin = brigadaDto.horaFin,
+                ubicacion = brigadaDto.ubicacion,
+                cobertura = brigadaDto.cobertura,
+                observaciones = brigadaDto.observaciones,
+                idEstadoBrigada = brigadaDto.idEstadoBrigada
+            };
+
             _context.Brigadas.Add(brigada);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetBrigada", new { id = brigada.idBrigada }, brigada);
+            return CreatedAtAction(nameof(GetBrigada), new { id = brigada.idBrigada }, brigada);
         }
 
-        // DELETE: api/Brigadas/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteBrigada(int id)
-        //{
-        //    var brigada = await _context.Brigadas.FindAsync(id);
-        //    if (brigada == null)
-        //    {
-        //        return NotFound();
-        //    }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteBrigada(int id)
+        {
+            var brigada = await _context.Brigadas.FindAsync(id);
+            if (brigada == null || brigada.isDeleted)
+            {
+                return NotFound();
+            }
 
-        //    _context.Brigadas.Remove(brigada);
-        //    await _context.SaveChangesAsync();
+            brigada.isDeleted = true;
+            _context.Brigadas.Update(brigada);
+            await _context.SaveChangesAsync();
 
-        //    return NoContent();
-        //}
+            return NoContent();
+        }
 
         private bool BrigadaExists(int id)
         {

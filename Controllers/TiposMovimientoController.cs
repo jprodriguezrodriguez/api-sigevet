@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.TiposMovimiento;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,84 +16,89 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/TiposMovimiento
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TipoMovimiento>>> GetTiposMovimiento()
+        public async Task<ActionResult<IEnumerable<TiposMovimientoResponseDto>>> GetTiposMovimiento()
         {
-            return await _context.TiposMovimiento.ToListAsync();
+            var tipos = await _context.TiposMovimiento
+                .Where(t => !t.isDeleted)
+                .Select(t => new TiposMovimientoResponseDto
+                {
+                    idTipoMovimiento = t.idTipoMovimiento,
+                    tipoMovimiento = t.tipoMovimiento,
+                    descripcion = t.descripcion
+                }).ToListAsync();
+
+            return Ok(tipos);
         }
 
-        // GET: api/TiposMovimiento/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<TipoMovimiento>> GetTipoMovimiento(int id)
+        public async Task<ActionResult<TiposMovimientoResponseDto>> GetTipoMovimiento(int id)
         {
-            var tipoMovimiento = await _context.TiposMovimiento.FindAsync(id);
+            var tipo = await _context.TiposMovimiento
+                .Where(t => !t.isDeleted && t.idTipoMovimiento == id)
+                .Select(t => new TiposMovimientoResponseDto
+                {
+                    idTipoMovimiento = t.idTipoMovimiento,
+                    tipoMovimiento = t.tipoMovimiento,
+                    descripcion = t.descripcion
+                }).FirstOrDefaultAsync();
 
-            if (tipoMovimiento == null)
+            if (tipo == null)
             {
                 return NotFound();
             }
 
-            return tipoMovimiento;
+            return Ok(tipo);
         }
 
-        // PUT: api/TiposMovimiento/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutTipoMovimiento(int id, TipoMovimiento tipoMovimiento)
+        public async Task<IActionResult> PutTipoMovimiento(int id, TiposMovimientoFormDto tipoDto)
         {
-            if (id != tipoMovimiento.idTipoMovimiento)
+            var tipo = await _context.TiposMovimiento.FindAsync(id);
+            if (tipo == null || tipo.isDeleted)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(tipoMovimiento).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!TipoMovimientoExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            tipo.tipoMovimiento = tipoDto.tipoMovimiento;
+            tipo.descripcion = tipoDto.descripcion;
+            _context.TiposMovimiento.Update(tipo);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/TiposMovimiento
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<TipoMovimiento>> PostTipoMovimiento(TipoMovimiento tipoMovimiento)
+        public async Task<ActionResult<TiposMovimientoResponseDto>> PostTipoMovimiento(TiposMovimientoFormDto tipoDto)
         {
-            _context.TiposMovimiento.Add(tipoMovimiento);
+            var tipo = new TipoMovimiento
+            {
+                idTipoMovimiento = 0,
+                tipoMovimiento = tipoDto.tipoMovimiento,
+                descripcion = tipoDto.descripcion
+            };
+
+            _context.TiposMovimiento.Add(tipo);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetTipoMovimiento", new { id = tipoMovimiento.idTipoMovimiento }, tipoMovimiento);
+            return CreatedAtAction(nameof(GetTipoMovimiento), new { id = tipo.idTipoMovimiento }, tipo);
         }
 
-        // DELETE: api/TiposMovimiento/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteTipoMovimiento(int id)
-        //{
-        //    var tipoMovimiento = await _context.TiposMovimiento.FindAsync(id);
-        //    if (tipoMovimiento == null)
-        //    {
-        //        return NotFound();
-        //    }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteTipoMovimiento(int id)
+        {
+            var tipoMovimiento = await _context.TiposMovimiento.FindAsync(id);
+            if (tipoMovimiento == null || tipoMovimiento.isDeleted)
+            {
+                return NotFound();
+            }
 
-        //    _context.TiposMovimiento.Remove(tipoMovimiento);
-        //    await _context.SaveChangesAsync();
+            tipoMovimiento.isDeleted = true;
+            _context.TiposMovimiento.Update(tipoMovimiento);
+            await _context.SaveChangesAsync();
 
-        //    return NoContent();
-        //}
+            return NoContent();
+        }
 
         private bool TipoMovimientoExists(int id)
         {

@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.TiposVacuna;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,84 +16,90 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/TiposVacuna
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TipoVacuna>>> GetTiposVacuna()
+        public async Task<ActionResult<IEnumerable<TiposVacunaResponseDto>>> GetTiposVacuna()
         {
-            return await _context.TiposVacuna.ToListAsync();
+            var tipos = await _context.TiposVacuna
+                .Where(t => !t.isDeleted)
+                .Select(t => new TiposVacunaResponseDto
+                {
+                    idTipoVacuna = t.idTipoVacuna,
+                    tipoVacuna = t.tipoVacuna,
+                    descripcion = t.descripcion
+                }).ToListAsync();
+
+            return Ok(tipos);
         }
 
-        // GET: api/TiposVacuna/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<TipoVacuna>> GetTipoVacuna(int id)
+        public async Task<ActionResult<TiposVacunaResponseDto>> GetTipoVacuna(int id)
         {
-            var tipoVacuna = await _context.TiposVacuna.FindAsync(id);
+            var tipo = await _context.TiposVacuna
+                .Where(t => !t.isDeleted && t.idTipoVacuna == id)
+                .Select(t => new TiposVacunaResponseDto
+                {
+                    idTipoVacuna = t.idTipoVacuna,
+                    tipoVacuna = t.tipoVacuna,
+                    descripcion = t.descripcion
+                }).FirstOrDefaultAsync();
 
-            if (tipoVacuna == null)
+            if (tipo == null)
             {
                 return NotFound();
             }
 
-            return tipoVacuna;
+            return Ok(tipo);
         }
 
-        // PUT: api/TiposVacuna/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutTipoVacuna(int id, TipoVacuna tipoVacuna)
+        public async Task<IActionResult> PutTipoVacuna(int id, TiposVacunaFormDto tipoDto)
         {
-            if (id != tipoVacuna.idTipoVacuna)
+            var tipo = await _context.TiposVacuna.FindAsync(id);
+            if (tipo == null || tipo.isDeleted)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(tipoVacuna).State = EntityState.Modified;
+            tipo.tipoVacuna = tipoDto.tipoVacuna;
+            tipo.descripcion = tipoDto.descripcion;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!TipoVacunaExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            _context.TiposVacuna.Update(tipo);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/TiposVacuna
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<TipoVacuna>> PostTipoVacuna(TipoVacuna tipoVacuna)
+        public async Task<ActionResult<TiposVacunaResponseDto>> PostTipoVacuna(TiposVacunaFormDto tipoDto)
         {
-            _context.TiposVacuna.Add(tipoVacuna);
+            var tipo = new TipoVacuna
+            {
+                idTipoVacuna = 0,
+                tipoVacuna = tipoDto.tipoVacuna,
+                descripcion = tipoDto.descripcion
+            };
+
+            _context.TiposVacuna.Add(tipo);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetTipoVacuna", new { id = tipoVacuna.idTipoVacuna }, tipoVacuna);
+            return CreatedAtAction(nameof(GetTipoVacuna), new { id = tipo.idTipoVacuna }, tipo);
         }
 
-        // DELETE: api/TiposVacuna/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteTipoVacuna(int id)
-        //{
-        //    var tipoVacuna = await _context.TiposVacuna.FindAsync(id);
-        //    if (tipoVacuna == null)
-        //    {
-        //        return NotFound();
-        //    }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteTipoVacuna(int id)
+        {
+            var tipoVacuna = await _context.TiposVacuna.FindAsync(id);
+            if (tipoVacuna == null || tipoVacuna.isDeleted)
+            {
+                return NotFound();
+            }
 
-        //    _context.TiposVacuna.Remove(tipoVacuna);
-        //    await _context.SaveChangesAsync();
+            tipoVacuna.isDeleted = true;
+            _context.TiposVacuna.Update(tipoVacuna);
+            await _context.SaveChangesAsync();
 
-        //    return NoContent();
-        //}
+            return NoContent();
+        }
 
         private bool TipoVacunaExists(int id)
         {

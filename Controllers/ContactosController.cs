@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.Contactos;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,84 +16,105 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/Contactos
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Contacto>>> GetContactos()
+        public async Task<ActionResult<IEnumerable<ContactosResponseDto>>> GetContactos()
         {
-            return await _context.Contactos.ToListAsync();
+            var contactos = await _context.Contactos
+                .Include(c => c.tipoContacto)
+                .Include(c => c.estadoContacto)
+                .Where(c => !c.isDeleted)
+                .Select(c => new ContactosResponseDto
+                {
+                    idContacto = c.idContacto,
+                    detalleContacto = c.detalleContacto,
+                    idPersonaContacto = c.idPersonaContacto,
+                    idLaboratorioContacto = c.idLaboratorioContacto,
+                    tipoContacto = c.tipoContacto != null ? c.tipoContacto.tipoContacto : null,
+                    estadoContacto = c.estadoContacto != null ? c.estadoContacto.estado : null
+                }).ToListAsync();
+
+            return Ok(contactos);
         }
 
-        // GET: api/Contactos/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Contacto>> GetContacto(int id)
+        public async Task<ActionResult<ContactosResponseDto>> GetContacto(int id)
         {
-            var contacto = await _context.Contactos.FindAsync(id);
+            var contacto = await _context.Contactos
+                .Include(c => c.tipoContacto)
+                .Include(c => c.estadoContacto)
+                .Where(c => !c.isDeleted && c.idContacto == id)
+                .Select(c => new ContactosResponseDto
+                {
+                    idContacto = c.idContacto,
+                    detalleContacto = c.detalleContacto,
+                    idPersonaContacto = c.idPersonaContacto,
+                    idLaboratorioContacto = c.idLaboratorioContacto,
+                    tipoContacto = c.tipoContacto != null ? c.tipoContacto.tipoContacto : null,
+                    estadoContacto = c.estadoContacto != null ? c.estadoContacto.estado : null
+                }).FirstOrDefaultAsync();
 
             if (contacto == null)
             {
                 return NotFound();
             }
 
-            return contacto;
+            return Ok(contacto);
         }
 
-        // PUT: api/Contactos/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutContacto(int id, Contacto contacto)
+        public async Task<IActionResult> PutContacto(int id, ContactosFormDto contactoDto)
         {
-            if (id != contacto.idContacto)
+            var contacto = await _context.Contactos.FindAsync(id);
+            if (contacto == null || contacto.isDeleted)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(contacto).State = EntityState.Modified;
+            contacto.detalleContacto = contactoDto.detalleContacto;
+            contacto.idPersonaContacto = contactoDto.idPersonaContacto;
+            contacto.idLaboratorioContacto = contactoDto.idLaboratorioContacto;
+            contacto.idTipoContacto = contactoDto.idTipoContacto;
+            contacto.idEstadoContacto = contactoDto.idEstadoContacto;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ContactoExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            _context.Contactos.Update(contacto);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/Contactos
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Contacto>> PostContacto(Contacto contacto)
+        public async Task<ActionResult<ContactosResponseDto>> PostContacto(ContactosFormDto contactoDto)
         {
+            var contacto = new Contacto
+            {
+                detalleContacto = contactoDto.detalleContacto,
+                idPersonaContacto = contactoDto.idPersonaContacto,
+                idLaboratorioContacto = contactoDto.idLaboratorioContacto,
+                idTipoContacto = contactoDto.idTipoContacto,
+                idEstadoContacto = contactoDto.idEstadoContacto
+            };
+
             _context.Contactos.Add(contacto);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetContacto", new { id = contacto.idContacto }, contacto);
+            return CreatedAtAction(nameof(GetContacto), new { id = contacto.idContacto }, contacto);
         }
 
-        // DELETE: api/Contactos/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteContacto(int id)
-        //{
-        //    var contacto = await _context.Contactos.FindAsync(id);
-        //    if (contacto == null)
-        //    {
-        //        return NotFound();
-        //    }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteContacto(int id)
+        {
+            var contacto = await _context.Contactos.FindAsync(id);
+            if (contacto == null || contacto.isDeleted)
+            {
+                return NotFound();
+            }
 
-        //    _context.Contactos.Remove(contacto);
-        //    await _context.SaveChangesAsync();
+            contacto.isDeleted = true;
+            _context.Contactos.Update(contacto);
+            await _context.SaveChangesAsync();
 
-        //    return NoContent();
-        //}
+            return NoContent();
+        }
 
         private bool ContactoExists(int id)
         {

@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.EspecialidadesVeterinario;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,84 +16,95 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/EspecialidadesVeterinario
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<EspecialidadVeterinario>>> GetEspecialidadesVeterinario()
+        public async Task<ActionResult<IEnumerable<EspecialidadesVeterinarioResponseDto>>> GetEspecialidadesVeterinario()
         {
-            return await _context.EspecialidadesVeterinario.ToListAsync();
+            var registros = await _context.EspecialidadesVeterinario
+                .Include(e => e.veterinarios)
+                    .ThenInclude(v => v!.persona)
+                .Include(e => e.especialidad)
+                .Where(e => !e.isDeleted)
+                .Select(e => new EspecialidadesVeterinarioResponseDto
+                {
+                    idVeterinarioEspecialidad = e.idVeterinarioEspecialidad,
+                    veterinario = e.veterinarios != null && e.veterinarios.persona != null ? e.veterinarios.persona.primerNombre + " " + e.veterinarios.persona.primerApellido : null,
+                    especialidad = e.especialidad != null ? e.especialidad.especialidad : null
+                }).ToListAsync();
+
+            return Ok(registros);
         }
 
-        // GET: api/EspecialidadesVeterinario/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<EspecialidadVeterinario>> GetEspecialidadVeterinario(int id)
+        public async Task<ActionResult<EspecialidadesVeterinarioResponseDto>> GetEspecialidadVeterinario(int id)
         {
-            var especialidadVeterinario = await _context.EspecialidadesVeterinario.FindAsync(id);
+            var registro = await _context.EspecialidadesVeterinario
+                .Include(e => e.veterinarios)
+                    .ThenInclude(v => v!.persona)
+                .Include(e => e.especialidad)
+                .Where(e => !e.isDeleted && e.idVeterinarioEspecialidad == id)
+                .Select(e => new EspecialidadesVeterinarioResponseDto
+                {
+                    idVeterinarioEspecialidad = e.idVeterinarioEspecialidad,
+                    veterinario = e.veterinarios != null && e.veterinarios.persona != null ? e.veterinarios.persona.primerNombre + " " + e.veterinarios.persona.primerApellido : null,
+                    especialidad = e.especialidad != null ? e.especialidad.especialidad : null
+                }).FirstOrDefaultAsync();
 
-            if (especialidadVeterinario == null)
+            if (registro == null)
             {
                 return NotFound();
             }
 
-            return especialidadVeterinario;
+            return Ok(registro);
         }
 
-        // PUT: api/EspecialidadesVeterinario/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutEspecialidadVeterinario(int id, EspecialidadVeterinario especialidadVeterinario)
+        public async Task<IActionResult> PutEspecialidadVeterinario(int id, EspecialidadesVeterinarioFormDto registroDto)
         {
-            if (id != especialidadVeterinario.idVeterinarioEspecialidad)
+            var registro = await _context.EspecialidadesVeterinario.FindAsync(id);
+            if (registro == null || registro.isDeleted)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(especialidadVeterinario).State = EntityState.Modified;
+            registro.idVeterinario = registroDto.idVeterinario;
+            registro.idEspecialidad = registroDto.idEspecialidad;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!EspecialidadVeterinarioExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            _context.EspecialidadesVeterinario.Update(registro);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/EspecialidadesVeterinario
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<EspecialidadVeterinario>> PostEspecialidadVeterinario(EspecialidadVeterinario especialidadVeterinario)
+        public async Task<ActionResult<EspecialidadesVeterinarioResponseDto>> PostEspecialidadVeterinario(EspecialidadesVeterinarioFormDto registroDto)
         {
-            _context.EspecialidadesVeterinario.Add(especialidadVeterinario);
+            var registro = new EspecialidadVeterinario
+            {
+                idVeterinario = registroDto.idVeterinario,
+                idEspecialidad = registroDto.idEspecialidad
+            };
+
+            _context.EspecialidadesVeterinario.Add(registro);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetEspecialidadVeterinario", new { id = especialidadVeterinario.idVeterinarioEspecialidad }, especialidadVeterinario);
+            return CreatedAtAction(nameof(GetEspecialidadVeterinario), new { id = registro.idVeterinarioEspecialidad }, registro);
         }
 
-        // DELETE: api/EspecialidadesVeterinario/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteEspecialidadVeterinario(int id)
-        //{
-        //    var especialidadVeterinario = await _context.EspecialidadesVeterinario.FindAsync(id);
-        //    if (especialidadVeterinario == null)
-        //    {
-        //        return NotFound();
-        //    }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteEspecialidadVeterinario(int id)
+        {
+            var registro = await _context.EspecialidadesVeterinario.FindAsync(id);
+            if (registro == null || registro.isDeleted)
+            {
+                return NotFound();
+            }
 
-        //    _context.EspecialidadesVeterinario.Remove(especialidadVeterinario);
-        //    await _context.SaveChangesAsync();
+            registro.isDeleted = true;
+            _context.EspecialidadesVeterinario.Update(registro);
+            await _context.SaveChangesAsync();
 
-        //    return NoContent();
-        //}
+            return NoContent();
+        }
 
         private bool EspecialidadVeterinarioExists(int id)
         {

@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.Inventarios;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,84 +16,95 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/Inventarios
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Inventario>>> GetInventarios()
+        public async Task<ActionResult<IEnumerable<InventariosResponseDto>>> GetInventarios()
         {
-            return await _context.Inventarios.ToListAsync();
+            var inventarios = await _context.Inventarios
+                .Include(i => i.insumoSanitario)
+                .Where(i => !i.isDeleted)
+                .Select(i => new InventariosResponseDto
+                {
+                    idInventario = i.idInventario,
+                    cantidadDisponible = i.cantidadDisponible,
+                    stockMinimo = i.stockMinimo,
+                    insumoSanitario = i.insumoSanitario != null ? i.insumoSanitario.insumoSanitario : null
+                }).ToListAsync();
+
+            return Ok(inventarios);
         }
 
-        // GET: api/Inventarios/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Inventario>> GetInventario(int id)
+        public async Task<ActionResult<InventariosResponseDto>> GetInventario(int id)
         {
-            var inventario = await _context.Inventarios.FindAsync(id);
+            var inventario = await _context.Inventarios
+                .Include(i => i.insumoSanitario)
+                .Where(i => !i.isDeleted && i.idInventario == id)
+                .Select(i => new InventariosResponseDto
+                {
+                    idInventario = i.idInventario,
+                    cantidadDisponible = i.cantidadDisponible,
+                    stockMinimo = i.stockMinimo,
+                    insumoSanitario = i.insumoSanitario != null ? i.insumoSanitario.insumoSanitario : null
+                }).FirstOrDefaultAsync();
 
             if (inventario == null)
             {
                 return NotFound();
             }
 
-            return inventario;
+            return Ok(inventario);
         }
 
-        // PUT: api/Inventarios/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutInventario(int id, Inventario inventario)
+        public async Task<IActionResult> PutInventario(int id, InventariosFormDto inventarioDto)
         {
-            if (id != inventario.idInventario)
+            var inventario = await _context.Inventarios.FindAsync(id);
+            if (inventario == null || inventario.isDeleted)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(inventario).State = EntityState.Modified;
+            inventario.cantidadDisponible = inventarioDto.cantidadDisponible;
+            inventario.stockMinimo = inventarioDto.stockMinimo;
+            inventario.idInsumoSanitario = inventarioDto.idInsumoSanitario;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!InventarioExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            _context.Inventarios.Update(inventario);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/Inventarios
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Inventario>> PostInventario(Inventario inventario)
+        public async Task<ActionResult<InventariosResponseDto>> PostInventario(InventariosFormDto inventarioDto)
         {
+            var inventario = new Inventario
+            {
+                cantidadDisponible = inventarioDto.cantidadDisponible,
+                stockMinimo = inventarioDto.stockMinimo,
+                idInsumoSanitario = inventarioDto.idInsumoSanitario
+            };
+
             _context.Inventarios.Add(inventario);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetInventario", new { id = inventario.idInventario }, inventario);
+            return CreatedAtAction(nameof(GetInventario), new { id = inventario.idInventario }, inventario);
         }
 
-        // DELETE: api/Inventarios/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteInventario(int id)
-        //{
-        //    var inventario = await _context.Inventarios.FindAsync(id);
-        //    if (inventario == null)
-        //    {
-        //        return NotFound();
-        //    }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteInventario(int id)
+        {
+            var inventario = await _context.Inventarios.FindAsync(id);
+            if (inventario == null || inventario.isDeleted)
+            {
+                return NotFound();
+            }
 
-        //    _context.Inventarios.Remove(inventario);
-        //    await _context.SaveChangesAsync();
+            inventario.isDeleted = true;
+            _context.Inventarios.Update(inventario);
+            await _context.SaveChangesAsync();
 
-        //    return NoContent();
-        //}
+            return NoContent();
+        }
 
         private bool InventarioExists(int id)
         {

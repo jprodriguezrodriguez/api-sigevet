@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.UnidadesMedida;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,84 +16,94 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/UnidadesMedida
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<UnidadMedida>>> GetUnidadesMedida()
+        public async Task<ActionResult<IEnumerable<UnidadesMedidaResponseDto>>> GetUnidadesMedida()
         {
-            return await _context.UnidadesMedida.ToListAsync();
+            var unidades = await _context.UnidadesMedida
+                .Where(u => !u.isDeleted)
+                .Select(u => new UnidadesMedidaResponseDto
+                {
+                    idUnidadMedida = u.idUnidadMedida,
+                    unidadMedida = u.unidadMedida,
+                    descripcion = u.descripcion
+                }).ToListAsync();
+
+            return Ok(unidades);
         }
 
-        // GET: api/UnidadesMedida/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<UnidadMedida>> GetUnidadMedida(int id)
+        public async Task<ActionResult<UnidadesMedidaResponseDto>> GetUnidadMedida(int id)
         {
-            var unidadMedida = await _context.UnidadesMedida.FindAsync(id);
+            var unidad = await _context.UnidadesMedida
+                .Where(u => !u.isDeleted && u.idUnidadMedida == id)
+                .Select(u => new UnidadesMedidaResponseDto
+                {
+                    idUnidadMedida = u.idUnidadMedida,
+                    unidadMedida = u.unidadMedida,
+                    descripcion = u.descripcion
+                }).FirstOrDefaultAsync();
 
-            if (unidadMedida == null)
+            if (unidad == null)
             {
                 return NotFound();
             }
 
-            return unidadMedida;
+            return Ok(unidad);
         }
 
-        // PUT: api/UnidadesMedida/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutUnidadMedida(int id, UnidadMedida unidadMedida)
+        public async Task<IActionResult> PutUnidadMedida(int id, UnidadesMedidaFormDto unidadDto)
         {
-            if (id != unidadMedida.idUnidadMedida)
+            var unidad = await _context.UnidadesMedida.FindAsync(id);
+            if (unidad == null || unidad.isDeleted)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(unidadMedida).State = EntityState.Modified;
+            unidad.unidadMedida = unidadDto.unidadMedida;
+            unidad.descripcion = unidadDto.descripcion;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!UnidadMedidaExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            _context.UnidadesMedida.Update(unidad);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/UnidadesMedida
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<UnidadMedida>> PostUnidadMedida(UnidadMedida unidadMedida)
+        public async Task<ActionResult<UnidadesMedidaResponseDto>> PostUnidadMedida(UnidadesMedidaFormDto unidadDto)
         {
-            _context.UnidadesMedida.Add(unidadMedida);
+            var unidad = new UnidadMedida
+            {
+                unidadMedida = unidadDto.unidadMedida,
+                descripcion = unidadDto.descripcion
+            };
+
+            _context.UnidadesMedida.Add(unidad);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetUnidadMedida", new { id = unidadMedida.idUnidadMedida }, unidadMedida);
+            return CreatedAtAction(nameof(GetUnidadMedida), new { id = unidad.idUnidadMedida }, new UnidadesMedidaResponseDto
+            {
+                idUnidadMedida = unidad.idUnidadMedida,
+                unidadMedida = unidad.unidadMedida,
+                descripcion = unidad.descripcion
+            });
         }
 
-        // DELETE: api/UnidadesMedida/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteUnidadMedida(int id)
-        //{
-        //    var unidadMedida = await _context.UnidadesMedida.FindAsync(id);
-        //    if (unidadMedida == null)
-        //    {
-        //        return NotFound();
-        //    }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteUnidadMedida(int id)
+        {
+            var unidadMedida = await _context.UnidadesMedida.FindAsync(id);
+            if (unidadMedida == null || unidadMedida.isDeleted)
+            {
+                return NotFound();
+            }
 
-        //    _context.UnidadesMedida.Remove(unidadMedida);
-        //    await _context.SaveChangesAsync();
+            unidadMedida.isDeleted = true;
+            _context.UnidadesMedida.Update(unidadMedida);
+            await _context.SaveChangesAsync();
 
-        //    return NoContent();
-        //}
+            return NoContent();
+        }
 
         private bool UnidadMedidaExists(int id)
         {

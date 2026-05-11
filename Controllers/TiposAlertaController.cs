@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.TiposAlerta;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,84 +16,88 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/TiposAlerta
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TipoAlerta>>> GetTiposAlerta()
+        public async Task<ActionResult<IEnumerable<TiposAlertaResponseDto>>> GetTiposAlerta()
         {
-            return await _context.TiposAlerta.ToListAsync();
+            var tipos = await _context.TiposAlerta
+                .Where(t => !t.isDeleted)
+                .Select(t => new TiposAlertaResponseDto
+                {
+                    idTipoAlerta = t.idTipoAlerta,
+                    alerta = t.alerta,
+                    descripcion = t.descripcion
+                }).ToListAsync();
+
+            return Ok(tipos);
         }
 
-        // GET: api/TiposAlerta/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<TipoAlerta>> GetTipoAlerta(int id)
+        public async Task<ActionResult<TiposAlertaResponseDto>> GetTipoAlerta(int id)
         {
-            var tipoAlerta = await _context.TiposAlerta.FindAsync(id);
+            var tipo = await _context.TiposAlerta
+                .Where(t => !t.isDeleted && t.idTipoAlerta == id)
+                .Select(t => new TiposAlertaResponseDto
+                {
+                    idTipoAlerta = t.idTipoAlerta,
+                    alerta = t.alerta,
+                    descripcion = t.descripcion
+                }).FirstOrDefaultAsync();
 
-            if (tipoAlerta == null)
+            if (tipo == null)
             {
                 return NotFound();
             }
 
-            return tipoAlerta;
+            return Ok(tipo);
         }
 
-        // PUT: api/TiposAlerta/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutTipoAlerta(int id, TipoAlerta tipoAlerta)
+        public async Task<IActionResult> PutTipoAlerta(int id, TiposAlertaFormDto tipoDto)
         {
-            if (id != tipoAlerta.idTipoAlerta)
+            var tipo = await _context.TiposAlerta.FindAsync(id);
+            if (tipo == null || tipo.isDeleted)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(tipoAlerta).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!TipoAlertaExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            tipo.alerta = tipoDto.alerta;
+            tipo.descripcion = tipoDto.descripcion;
+            _context.TiposAlerta.Update(tipo);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/TiposAlerta
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<TipoAlerta>> PostTipoAlerta(TipoAlerta tipoAlerta)
+        public async Task<ActionResult<TiposAlertaResponseDto>> PostTipoAlerta(TiposAlertaFormDto tipoDto)
         {
-            _context.TiposAlerta.Add(tipoAlerta);
+            var tipo = new TipoAlerta
+            {
+                alerta = tipoDto.alerta,
+                descripcion = tipoDto.descripcion
+            };
+
+            _context.TiposAlerta.Add(tipo);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetTipoAlerta", new { id = tipoAlerta.idTipoAlerta }, tipoAlerta);
+            return CreatedAtAction(nameof(GetTipoAlerta), new { id = tipo.idTipoAlerta }, tipo);
         }
 
-        // DELETE: api/TiposAlerta/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteTipoAlerta(int id)
-        //{
-        //    var tipoAlerta = await _context.TiposAlerta.FindAsync(id);
-        //    if (tipoAlerta == null)
-        //    {
-        //        return NotFound();
-        //    }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteTipoAlerta(int id)
+        {
+            var tipoAlerta = await _context.TiposAlerta.FindAsync(id);
+            if (tipoAlerta == null || tipoAlerta.isDeleted)
+            {
+                return NotFound();
+            }
 
-        //    _context.TiposAlerta.Remove(tipoAlerta);
-        //    await _context.SaveChangesAsync();
+            tipoAlerta.isDeleted = true;
+            _context.TiposAlerta.Update(tipoAlerta);
+            await _context.SaveChangesAsync();
 
-        //    return NoContent();
-        //}
+            return NoContent();
+        }
 
         private bool TipoAlertaExists(int id)
         {

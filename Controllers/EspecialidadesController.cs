@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.Especialidades;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,84 +16,90 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/Especialidades
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Especialidad>>> GetEspecialidades()
+        public async Task<ActionResult<IEnumerable<EspecialidadesResponseDto>>> GetEspecialidades()
         {
-            return await _context.Especialidades.ToListAsync();
+            var especialidades = await _context.Especialidades
+                .Where(e => !e.isDeleted)
+                .Select(e => new EspecialidadesResponseDto
+                {
+                    idEspecialidad = e.idEspecialidad,
+                    especialidad = e.especialidad,
+                    descripcion = e.descripcion
+                }).ToListAsync();
+
+            return Ok(especialidades);
         }
 
-        // GET: api/Especialidades/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Especialidad>> GetEspecialidad(int id)
+        public async Task<ActionResult<EspecialidadesResponseDto>> GetEspecialidad(int id)
         {
-            var especialidad = await _context.Especialidades.FindAsync(id);
+            var especialidad = await _context.Especialidades
+                .Where(e => !e.isDeleted && e.idEspecialidad == id)
+                .Select(e => new EspecialidadesResponseDto
+                {
+                    idEspecialidad = e.idEspecialidad,
+                    especialidad = e.especialidad,
+                    descripcion = e.descripcion
+                }).FirstOrDefaultAsync();
 
             if (especialidad == null)
             {
                 return NotFound();
             }
 
-            return especialidad;
+            return Ok(especialidad);
         }
 
-        // PUT: api/Especialidades/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutEspecialidad(int id, Especialidad especialidad)
+        public async Task<IActionResult> PutEspecialidad(int id, EspecialidadesFormDto especialidadDto)
         {
-            if (id != especialidad.idEspecialidad)
+            var especialidad = await _context.Especialidades.FindAsync(id);
+            if (especialidad == null || especialidad.isDeleted)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(especialidad).State = EntityState.Modified;
+            especialidad.especialidad = especialidadDto.especialidad;
+            especialidad.descripcion = especialidadDto.descripcion;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!EspecialidadExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            _context.Especialidades.Update(especialidad);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/Especialidades
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Especialidad>> PostEspecialidad(Especialidad especialidad)
+        public async Task<ActionResult<EspecialidadesResponseDto>> PostEspecialidad(EspecialidadesFormDto especialidadDto)
         {
+            var especialidad = new Especialidad
+            {
+                idEspecialidad = 0,
+                especialidad = especialidadDto.especialidad,
+                descripcion = especialidadDto.descripcion
+            };
+
             _context.Especialidades.Add(especialidad);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetEspecialidad", new { id = especialidad.idEspecialidad }, especialidad);
+            return CreatedAtAction(nameof(GetEspecialidad), new { id = especialidad.idEspecialidad }, especialidad);
         }
 
-        // DELETE: api/Especialidades/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteEspecialidad(int id)
-        //{
-        //    var especialidad = await _context.Especialidades.FindAsync(id);
-        //    if (especialidad == null)
-        //    {
-        //        return NotFound();
-        //    }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteEspecialidad(int id)
+        {
+            var especialidad = await _context.Especialidades.FindAsync(id);
+            if (especialidad == null || especialidad.isDeleted)
+            {
+                return NotFound();
+            }
 
-        //    _context.Especialidades.Remove(especialidad);
-        //    await _context.SaveChangesAsync();
+            especialidad.isDeleted = true;
+            _context.Especialidades.Update(especialidad);
+            await _context.SaveChangesAsync();
 
-        //    return NoContent();
-        //}
+            return NoContent();
+        }
 
         private bool EspecialidadExists(int id)
         {

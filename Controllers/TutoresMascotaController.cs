@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.TutoresMascota;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,84 +16,95 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/TutoresMascota
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TutorMascota>>> GetTutoresMascota()
+        public async Task<ActionResult<IEnumerable<TutoresMascotaResponseDto>>> GetTutoresMascota()
         {
-            return await _context.TutoresMascota.ToListAsync();
+            var registros = await _context.TutoresMascota
+                .Include(t => t.tutor)
+                    .ThenInclude(t => t!.persona)
+                .Include(t => t.mascota)
+                .Where(t => !t.isDeleted)
+                .Select(t => new TutoresMascotaResponseDto
+                {
+                    idTutorMascota = t.idTutorMascota,
+                    tutor = t.tutor != null && t.tutor.persona != null ? t.tutor.persona.primerNombre + " " + t.tutor.persona.primerApellido : null,
+                    mascota = t.mascota != null ? t.mascota.nombre : null
+                }).ToListAsync();
+
+            return Ok(registros);
         }
 
-        // GET: api/TutoresMascota/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<TutorMascota>> GetTutorMascota(int id)
+        public async Task<ActionResult<TutoresMascotaResponseDto>> GetTutorMascota(int id)
         {
-            var tutorMascota = await _context.TutoresMascota.FindAsync(id);
+            var registro = await _context.TutoresMascota
+                .Include(t => t.tutor)
+                    .ThenInclude(t => t!.persona)
+                .Include(t => t.mascota)
+                .Where(t => !t.isDeleted && t.idTutorMascota == id)
+                .Select(t => new TutoresMascotaResponseDto
+                {
+                    idTutorMascota = t.idTutorMascota,
+                    tutor = t.tutor != null && t.tutor.persona != null ? t.tutor.persona.primerNombre + " " + t.tutor.persona.primerApellido : null,
+                    mascota = t.mascota != null ? t.mascota.nombre : null
+                }).FirstOrDefaultAsync();
 
-            if (tutorMascota == null)
+            if (registro == null)
             {
                 return NotFound();
             }
 
-            return tutorMascota;
+            return Ok(registro);
         }
 
-        // PUT: api/TutoresMascota/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutTutorMascota(int id, TutorMascota tutorMascota)
+        public async Task<IActionResult> PutTutorMascota(int id, TutoresMascotaFormDto registroDto)
         {
-            if (id != tutorMascota.idTutorMascota)
+            var registro = await _context.TutoresMascota.FindAsync(id);
+            if (registro == null || registro.isDeleted)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(tutorMascota).State = EntityState.Modified;
+            registro.idPersonaTut = registroDto.idPersonaTut;
+            registro.idMascota = registroDto.idMascota;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!TutorMascotaExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            _context.TutoresMascota.Update(registro);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/TutoresMascota
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<TutorMascota>> PostTutorMascota(TutorMascota tutorMascota)
+        public async Task<ActionResult<TutoresMascotaResponseDto>> PostTutorMascota(TutoresMascotaFormDto registroDto)
         {
-            _context.TutoresMascota.Add(tutorMascota);
+            var registro = new TutorMascota
+            {
+                idPersonaTut = registroDto.idPersonaTut,
+                idMascota = registroDto.idMascota
+            };
+
+            _context.TutoresMascota.Add(registro);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetTutorMascota", new { id = tutorMascota.idTutorMascota }, tutorMascota);
+            return CreatedAtAction(nameof(GetTutorMascota), new { id = registro.idTutorMascota }, registro);
         }
 
-        // DELETE: api/TutoresMascota/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteTutorMascota(int id)
-        //{
-        //    var tutorMascota = await _context.TutoresMascota.FindAsync(id);
-        //    if (tutorMascota == null)
-        //    {
-        //        return NotFound();
-        //    }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteTutorMascota(int id)
+        {
+            var registro = await _context.TutoresMascota.FindAsync(id);
+            if (registro == null || registro.isDeleted)
+            {
+                return NotFound();
+            }
 
-        //    _context.TutoresMascota.Remove(tutorMascota);
-        //    await _context.SaveChangesAsync();
+            registro.isDeleted = true;
+            _context.TutoresMascota.Update(registro);
+            await _context.SaveChangesAsync();
 
-        //    return NoContent();
-        //}
+            return NoContent();
+        }
 
         private bool TutorMascotaExists(int id)
         {

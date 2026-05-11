@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.Veterinarios;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,63 +16,85 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/Veterinarios
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Veterinario>>> GetVeterinarios()
+        public async Task<ActionResult<IEnumerable<VeterinariosResponseDto>>> GetVeterinarios()
         {
-            return await _context.Veterinarios.ToListAsync();
+            var veterinarios = await _context.Veterinarios
+                .Include(v => v.persona)
+                .Include(v => v.estadoVeterinario)
+                .Where(v => v.persona == null || !v.persona.isDeleted)
+                .Select(v => new VeterinariosResponseDto
+                {
+                    idPersonaVet = v.idPersonaVet,
+                    numeroTarjetaProfesional = v.numeroTarjetaProfesional,
+                    fechaRegistroVeterinario = v.fechaRegistroVeterinario,
+                    fechaActualizacionVeterinario = v.fechaActualizacionVeterinario,
+                    persona = v.persona != null ? v.persona.primerNombre + " " + v.persona.primerApellido : null,
+                    estadoVeterinario = v.estadoVeterinario != null ? v.estadoVeterinario.estado : null
+                }).ToListAsync();
+
+            return Ok(veterinarios);
         }
 
-        // GET: api/Veterinarios/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Veterinario>> GetVeterinario(int id)
+        public async Task<ActionResult<VeterinariosResponseDto>> GetVeterinario(int id)
         {
-            var veterinario = await _context.Veterinarios.FindAsync(id);
+            var veterinario = await _context.Veterinarios
+                .Include(v => v.persona)
+                .Include(v => v.estadoVeterinario)
+                .Where(v => v.idPersonaVet == id && (v.persona == null || !v.persona.isDeleted))
+                .Select(v => new VeterinariosResponseDto
+                {
+                    idPersonaVet = v.idPersonaVet,
+                    numeroTarjetaProfesional = v.numeroTarjetaProfesional,
+                    fechaRegistroVeterinario = v.fechaRegistroVeterinario,
+                    fechaActualizacionVeterinario = v.fechaActualizacionVeterinario,
+                    persona = v.persona != null ? v.persona.primerNombre + " " + v.persona.primerApellido : null,
+                    estadoVeterinario = v.estadoVeterinario != null ? v.estadoVeterinario.estado : null
+                }).FirstOrDefaultAsync();
 
             if (veterinario == null)
             {
                 return NotFound();
             }
 
-            return veterinario;
+            return Ok(veterinario);
         }
 
-        // PUT: api/Veterinarios/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutVeterinario(int id, Veterinario veterinario)
+        public async Task<IActionResult> PutVeterinario(int id, VeterinariosFormDto veterinarioDto)
         {
-            if (id != veterinario.idPersonaVet)
+            if (id != veterinarioDto.idPersonaVet)
             {
                 return BadRequest();
             }
 
-            _context.Entry(veterinario).State = EntityState.Modified;
+            var veterinario = await _context.Veterinarios.FindAsync(id);
+            if (veterinario == null)
+            {
+                return NotFound();
+            }
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!VeterinarioExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            veterinario.numeroTarjetaProfesional = veterinarioDto.numeroTarjetaProfesional;
+            veterinario.idEstadoDisponibilidad = veterinarioDto.idEstadoDisponibilidad;
+            veterinario.fechaActualizacionVeterinario = DateTime.Now;
+
+            _context.Veterinarios.Update(veterinario);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/Veterinarios
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Veterinario>> PostVeterinario(Veterinario veterinario)
+        public async Task<ActionResult<VeterinariosResponseDto>> PostVeterinario(VeterinariosFormDto veterinarioDto)
         {
+            var veterinario = new Veterinario
+            {
+                idPersonaVet = veterinarioDto.idPersonaVet,
+                numeroTarjetaProfesional = veterinarioDto.numeroTarjetaProfesional,
+                idEstadoDisponibilidad = veterinarioDto.idEstadoDisponibilidad
+            };
+
             _context.Veterinarios.Add(veterinario);
             try
             {
@@ -88,30 +106,12 @@ namespace sigevet.Controllers
                 {
                     return Conflict();
                 }
-                else
-                {
-                    throw;
-                }
+
+                throw;
             }
 
-            return CreatedAtAction("GetVeterinario", new { id = veterinario.idPersonaVet }, veterinario);
+            return CreatedAtAction(nameof(GetVeterinario), new { id = veterinario.idPersonaVet }, veterinario);
         }
-
-        // DELETE: api/Veterinarios/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteVeterinario(int id)
-        //{
-        //    var veterinario = await _context.Veterinarios.FindAsync(id);
-        //    if (veterinario == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    _context.Veterinarios.Remove(veterinario);
-        //    await _context.SaveChangesAsync();
-
-        //    return NoContent();
-        //}
 
         private bool VeterinarioExists(int id)
         {

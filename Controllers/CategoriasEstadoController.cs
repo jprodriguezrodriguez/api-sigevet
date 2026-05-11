@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.CategoriasEstado;
+using sigevet.DTOs.Estados;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,100 +17,114 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/CategoriasEstado
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CategoriaEstado>>> GetCategoriasEstado()
+        public async Task<ActionResult<IEnumerable<CategoriasEstadoResponseDto>>> GetCategoriasEstado()
         {
-            return await _context.CategoriasEstado.ToListAsync();
+            var categorias = await _context.CategoriasEstado
+                .Where(c => !c.isDeleted)
+                .Select(c => new CategoriasEstadoResponseDto
+                {
+                    idCategoriaEstado = c.idCategoriaEstado,
+                    categoriaEstado = c.categoriaEstado,
+                    descripcion = c.descripcion
+                }).ToListAsync();
+
+            return Ok(categorias);
         }
 
-        // GET: api/CategoriaEstadoes/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<CategoriaEstado>> GetCategoriaEstado(int id)
+        public async Task<ActionResult<CategoriasEstadoResponseDto>> GetCategoriaEstado(int id)
         {
-            var categoriaEstado = await _context.CategoriasEstado.FindAsync(id);
+            var categoria = await _context.CategoriasEstado
+                .Where(c => !c.isDeleted && c.idCategoriaEstado == id)
+                .Select(c => new CategoriasEstadoResponseDto
+                {
+                    idCategoriaEstado = c.idCategoriaEstado,
+                    categoriaEstado = c.categoriaEstado,
+                    descripcion = c.descripcion
+                }).FirstOrDefaultAsync();
 
-            if (categoriaEstado == null)
+            if (categoria == null)
             {
                 return NotFound();
             }
 
-            return categoriaEstado;
+            return Ok(categoria);
         }
 
-        // PUT: api/CategoriaEstadoes/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutCategoriaEstado(int id, CategoriaEstado categoriaEstado)
+        public async Task<IActionResult> PutCategoriaEstado(int id, CategoriasEstadoFormDto categoriaDto)
         {
-            if (id != categoriaEstado.idCategoriaEstado)
+            var categoria = await _context.CategoriasEstado.FindAsync(id);
+            if (categoria == null || categoria.isDeleted)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(categoriaEstado).State = EntityState.Modified;
+            categoria.categoriaEstado = categoriaDto.categoriaEstado;
+            categoria.descripcion = categoriaDto.descripcion;
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!CategoriaEstadoExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            _context.CategoriasEstado.Update(categoria);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/CategoriaEstadoes
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<CategoriaEstado>> PostCategoriaEstado(CategoriaEstado categoriaEstado)
+        public async Task<ActionResult<CategoriasEstadoResponseDto>> PostCategoriaEstado(CategoriasEstadoFormDto categoriaDto)
         {
-            _context.CategoriasEstado.Add(categoriaEstado);
+            var categoria = new CategoriaEstado
+            {
+                categoriaEstado = categoriaDto.categoriaEstado,
+                descripcion = categoriaDto.descripcion
+            };
+
+            _context.CategoriasEstado.Add(categoria);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetCategoriaEstado", new { id = categoriaEstado.idCategoriaEstado }, categoriaEstado);
+            return CreatedAtAction(nameof(GetCategoriaEstado), new { id = categoria.idCategoriaEstado }, new CategoriasEstadoResponseDto
+            {
+                idCategoriaEstado = categoria.idCategoriaEstado,
+                categoriaEstado = categoria.categoriaEstado,
+                descripcion = categoria.descripcion
+            });
         }
 
-        //// DELETE: api/CategoriaEstadoes/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteCategoriaEstado(int id)
-        //{
-        //    var categoriaEstado = await _context.CategoriasEstado.FindAsync(id);
-        //    if (categoriaEstado == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    _context.CategoriasEstado.Remove(categoriaEstado);
-        //    await _context.SaveChangesAsync();
-
-        //    return NoContent();
-        //}
-
-        // GET: api/CategoriasEstado/2/estados
-        [HttpGet("estados-por-categoria/{id}")]
-        public async Task<ActionResult<IEnumerable<Estado>>> GetEstadosDeCategoria(int id)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteCategoriaEstado(int id)
         {
-            var categoriaExiste = await _context.CategoriasEstado
-                .AnyAsync(c => c.idCategoriaEstado == id);
+            var categoriaEstado = await _context.CategoriasEstado.FindAsync(id);
+            if (categoriaEstado == null || categoriaEstado.isDeleted)
+            {
+                return NotFound();
+            }
 
+            categoriaEstado.isDeleted = true;
+            _context.CategoriasEstado.Update(categoriaEstado);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        [HttpGet("estados-por-categoria/{id}")]
+        public async Task<ActionResult<IEnumerable<EstadosResponseDto>>> GetEstadosDeCategoria(int id)
+        {
+            var categoriaExiste = await _context.CategoriasEstado.AnyAsync(c => c.idCategoriaEstado == id && !c.isDeleted);
             if (!categoriaExiste)
             {
-                return NotFound($"No existe una categoría de estado con ID {id}.");
+                return NotFound($"No existe una categoria de estado con ID {id}.");
             }
 
             var estados = await _context.Estados
-                .Where(e => e.idCategoriaEstado == id)
-                .ToListAsync();
+                .Include(e => e.categoriaEstado)
+                .Where(e => e.idCategoriaEstado == id && !e.isDeleted)
+                .Select(e => new EstadosResponseDto
+                {
+                    idEstado = e.idEstado,
+                    estado = e.estado,
+                    descripcion = e.descripcion,
+                    categoriaEstado = e.categoriaEstado != null ? e.categoriaEstado.categoriaEstado : null
+                }).ToListAsync();
 
             return Ok(estados);
         }

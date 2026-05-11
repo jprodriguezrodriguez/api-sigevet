@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.RolesParticipacion;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,84 +16,88 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/RolesParticipacion
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<RolParticipacion>>> GetRolesParticipacion()
+        public async Task<ActionResult<IEnumerable<RolesParticipacionResponseDto>>> GetRolesParticipacion()
         {
-            return await _context.RolesParticipacion.ToListAsync();
+            var roles = await _context.RolesParticipacion
+                .Where(r => !r.isDeleted)
+                .Select(r => new RolesParticipacionResponseDto
+                {
+                    idRolParticipacion = r.idRolParticipacion,
+                    rolParticipacion = r.rolParticipacion,
+                    descripcion = r.descripcion
+                }).ToListAsync();
+
+            return Ok(roles);
         }
 
-        // GET: api/RolesParticipacion/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<RolParticipacion>> GetRolParticipacion(int id)
+        public async Task<ActionResult<RolesParticipacionResponseDto>> GetRolParticipacion(int id)
         {
-            var rolParticipacion = await _context.RolesParticipacion.FindAsync(id);
+            var rol = await _context.RolesParticipacion
+                .Where(r => !r.isDeleted && r.idRolParticipacion == id)
+                .Select(r => new RolesParticipacionResponseDto
+                {
+                    idRolParticipacion = r.idRolParticipacion,
+                    rolParticipacion = r.rolParticipacion,
+                    descripcion = r.descripcion
+                }).FirstOrDefaultAsync();
 
-            if (rolParticipacion == null)
+            if (rol == null)
             {
                 return NotFound();
             }
 
-            return rolParticipacion;
+            return Ok(rol);
         }
 
-        // PUT: api/RolesParticipacion/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutRolParticipacion(int id, RolParticipacion rolParticipacion)
+        public async Task<IActionResult> PutRolParticipacion(int id, RolesParticipacionFormDto rolDto)
         {
-            if (id != rolParticipacion.idRolParticipacion)
+            var rol = await _context.RolesParticipacion.FindAsync(id);
+            if (rol == null || rol.isDeleted)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(rolParticipacion).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!RolParticipacionExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            rol.rolParticipacion = rolDto.rolParticipacion;
+            rol.descripcion = rolDto.descripcion;
+            _context.RolesParticipacion.Update(rol);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/RolesParticipacion
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<RolParticipacion>> PostRolParticipacion(RolParticipacion rolParticipacion)
+        public async Task<ActionResult<RolesParticipacionResponseDto>> PostRolParticipacion(RolesParticipacionFormDto rolDto)
         {
-            _context.RolesParticipacion.Add(rolParticipacion);
+            var rol = new RolParticipacion
+            {
+                rolParticipacion = rolDto.rolParticipacion,
+                descripcion = rolDto.descripcion
+            };
+
+            _context.RolesParticipacion.Add(rol);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetRolParticipacion", new { id = rolParticipacion.idRolParticipacion }, rolParticipacion);
+            return CreatedAtAction(nameof(GetRolParticipacion), new { id = rol.idRolParticipacion }, rol);
         }
 
-        // DELETE: api/RolesParticipacion/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteRolParticipacion(int id)
-        //{
-        //    var rolParticipacion = await _context.RolesParticipacion.FindAsync(id);
-        //    if (rolParticipacion == null)
-        //    {
-        //        return NotFound();
-        //    }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteRolParticipacion(int id)
+        {
+            var rolParticipacion = await _context.RolesParticipacion.FindAsync(id);
+            if (rolParticipacion == null || rolParticipacion.isDeleted)
+            {
+                return NotFound();
+            }
 
-        //    _context.RolesParticipacion.Remove(rolParticipacion);
-        //    await _context.SaveChangesAsync();
+            rolParticipacion.isDeleted = true;
+            _context.RolesParticipacion.Update(rolParticipacion);
+            await _context.SaveChangesAsync();
 
-        //    return NoContent();
-        //}
+            return NoContent();
+        }
 
         private bool RolParticipacionExists(int id)
         {

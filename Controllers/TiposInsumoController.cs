@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sigevet.DTOs.TiposInsumo;
 using sigevet.Models;
 
 namespace sigevet.Controllers
@@ -20,84 +16,88 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/TiposInsumo
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TipoInsumo>>> GetTiposInsumo()
+        public async Task<ActionResult<IEnumerable<TiposInsumoResponseDto>>> GetTiposInsumo()
         {
-            return await _context.TiposInsumo.ToListAsync();
+            var tipos = await _context.TiposInsumo
+                .Where(t => !t.isDeleted)
+                .Select(t => new TiposInsumoResponseDto
+                {
+                    idTipoInsumo = t.idTipoInsumo,
+                    tipoInsumo = t.tipoInsumo,
+                    descripcion = t.descripcion
+                }).ToListAsync();
+
+            return Ok(tipos);
         }
 
-        // GET: api/TiposInsumo/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<TipoInsumo>> GetTipoInsumo(int id)
+        public async Task<ActionResult<TiposInsumoResponseDto>> GetTipoInsumo(int id)
         {
-            var tipoInsumo = await _context.TiposInsumo.FindAsync(id);
+            var tipo = await _context.TiposInsumo
+                .Where(t => !t.isDeleted && t.idTipoInsumo == id)
+                .Select(t => new TiposInsumoResponseDto
+                {
+                    idTipoInsumo = t.idTipoInsumo,
+                    tipoInsumo = t.tipoInsumo,
+                    descripcion = t.descripcion
+                }).FirstOrDefaultAsync();
 
-            if (tipoInsumo == null)
+            if (tipo == null)
             {
                 return NotFound();
             }
 
-            return tipoInsumo;
+            return Ok(tipo);
         }
 
-        // PUT: api/TiposInsumo/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutTipoInsumo(int id, TipoInsumo tipoInsumo)
+        public async Task<IActionResult> PutTipoInsumo(int id, TiposInsumoFormDto tipoDto)
         {
-            if (id != tipoInsumo.idTipoInsumo)
+            var tipo = await _context.TiposInsumo.FindAsync(id);
+            if (tipo == null || tipo.isDeleted)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(tipoInsumo).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!TipoInsumoExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            tipo.tipoInsumo = tipoDto.tipoInsumo;
+            tipo.descripcion = tipoDto.descripcion;
+            _context.TiposInsumo.Update(tipo);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // POST: api/TiposInsumo
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<TipoInsumo>> PostTipoInsumo(TipoInsumo tipoInsumo)
+        public async Task<ActionResult<TiposInsumoResponseDto>> PostTipoInsumo(TiposInsumoFormDto tipoDto)
         {
-            _context.TiposInsumo.Add(tipoInsumo);
+            var tipo = new TipoInsumo
+            {
+                tipoInsumo = tipoDto.tipoInsumo,
+                descripcion = tipoDto.descripcion
+            };
+
+            _context.TiposInsumo.Add(tipo);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetTipoInsumo", new { id = tipoInsumo.idTipoInsumo }, tipoInsumo);
+            return CreatedAtAction(nameof(GetTipoInsumo), new { id = tipo.idTipoInsumo }, tipo);
         }
 
-        // DELETE: api/TiposInsumo/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteTipoInsumo(int id)
-        //{
-        //    var tipoInsumo = await _context.TiposInsumo.FindAsync(id);
-        //    if (tipoInsumo == null)
-        //    {
-        //        return NotFound();
-        //    }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteTipoInsumo(int id)
+        {
+            var tipoInsumo = await _context.TiposInsumo.FindAsync(id);
+            if (tipoInsumo == null || tipoInsumo.isDeleted)
+            {
+                return NotFound();
+            }
 
-        //    _context.TiposInsumo.Remove(tipoInsumo);
-        //    await _context.SaveChangesAsync();
+            tipoInsumo.isDeleted = true;
+            _context.TiposInsumo.Update(tipoInsumo);
+            await _context.SaveChangesAsync();
 
-        //    return NoContent();
-        //}
+            return NoContent();
+        }
 
         private bool TipoInsumoExists(int id)
         {
