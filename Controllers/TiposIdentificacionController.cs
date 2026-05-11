@@ -138,7 +138,7 @@ namespace sigevet.Controllers
 
 
             tipoIdentificacionExistente.tipoIdentificacion = request.tipoIdentificacion.Trim();
-            tipoIdentificacionExistente.descripcion = request.descripcion.IsNullOrEmpty() ? tipoIdentificacionExistente.descripcion : request.descripcion?.Trim();
+            tipoIdentificacionExistente.descripcion = string.IsNullOrEmpty(request.descripcion) ? tipoIdentificacionExistente.descripcion : request.descripcion?.Trim();
             tipoIdentificacionExistente.fechaActualizacion = DateTime.Now;
 
             _context.Entry(tipoIdentificacionExistente).State = EntityState.Modified;
