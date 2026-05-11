@@ -2,7 +2,7 @@
 {
     public class Roles: Auditable
     {
-        public required int idRol { get; set; }
+        public int idRol { get; set; }
         public required string rolUsuario { get; set; }
         public string? descripcion { get; set; }
 

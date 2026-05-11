@@ -4,9 +4,10 @@ namespace sigevet.Models
 {
     public class CuentasUsuarios : Auditable
     {
-        public required int idCuentaUsuario { get; set; }
+        public int idCuentaUsuario { get; set; }
         public required string usuario { get; set; }
         public required string contraseniaHash { get; set; }
+        public required string salt { get; set; }
         public DateTime? ultimoInicioSesion { get; set; }
         public int intentosFallidos { get; set; }
         public DateTime? fechaDesbloqueo { get; set; }
