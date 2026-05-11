@@ -1,5 +1,4 @@
-﻿using Azure;
-using Azure.Core;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -184,6 +183,7 @@ namespace sigevet.Controllers
         }
 
         // POST: api/CuentasUsuarios/login
+        [AllowAnonymous]
         [HttpPost("login")]
         public async Task<ActionResult<LoginResponseDto>> Login(LoginRequestDto loginRequest)
         {
@@ -243,6 +243,7 @@ namespace sigevet.Controllers
         }
 
         // POST: api/CuentasUsuarios/refresh
+        [AllowAnonymous]
         [HttpPost("refresh")]
         public async Task<ActionResult<LoginResponseDto>> RefreshToken(RefreshTokenRequestDto refreshRequest)
         {
