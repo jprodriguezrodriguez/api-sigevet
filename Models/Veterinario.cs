@@ -4,6 +4,7 @@
     {
         public int idPersonaVet {  get; set; }
         public required String numeroTarjetaProfesional { get; set; }
+        public bool isDeleted { get; set; }
         public DateTime fechaRegistroVeterinario { get; set; } = DateTime.Now;
         public DateTime fechaActualizacionVeterinario { get; set; } = DateTime.Now;
         

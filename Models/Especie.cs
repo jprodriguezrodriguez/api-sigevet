@@ -2,7 +2,7 @@
 {
     public class Especie : Auditable
     {
-        public required int idEspecie { get; set; }
+        public int idEspecie { get; set; }
         public required string especie { get; set; }
         public string? descripcion { get; set; }
 

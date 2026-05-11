@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using sigevet.Models;
 
@@ -11,9 +12,11 @@ using sigevet.Models;
 namespace sigevet.Migrations
 {
     [DbContext(typeof(SigevetDbContext))]
-    partial class SigevetDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260511012338_createIsDeletedTutorVeterinario")]
+    partial class createIsDeletedTutorVeterinario
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -271,10 +274,6 @@ namespace sigevet.Migrations
 
                     b.Property<bool>("isDeleted")
                         .HasColumnType("bit");
-
-                    b.Property<string>("salt")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("ultimoInicioSesion")
                         .HasColumnType("datetime2");

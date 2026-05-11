@@ -17,118 +17,261 @@ namespace sigevet.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<BrigadasResponseDto>>> GetBrigadas()
+        public async Task<ActionResult<IEnumerable<BrigadaResponseDto>>> GetBrigadas()
         {
             var brigadas = await _context.Brigadas
-                .Include(b => b.estadoBrigada)
-                .Where(b => !b.isDeleted)
-                .Select(b => new BrigadasResponseDto
+                .Where(brigada => !brigada.isDeleted)
+                .Select(brigada => new BrigadaResponseDto
                 {
-                    idBrigada = b.idBrigada,
-                    nombreBrigada = b.nombreBrigada,
-                    fechaBrigada = b.fechaBrigada,
-                    horaInicio = b.horaInicio,
-                    horaFin = b.horaFin,
-                    ubicacion = b.ubicacion,
-                    cobertura = b.cobertura,
-                    observaciones = b.observaciones,
-                    estadoBrigada = b.estadoBrigada != null ? b.estadoBrigada.estado : null
-                }).ToListAsync();
+                    idBrigada = brigada.idBrigada,
+                    nombreBrigada = brigada.nombreBrigada,
+                    fechaBrigada = brigada.fechaBrigada,
+                    horaInicio = brigada.horaInicio,
+                    horaFin = brigada.horaFin,
+                    ubicacion = brigada.ubicacion,
+                    cobertura = brigada.cobertura,
+                    observaciones = brigada.observaciones,
+                    idEstadoBrigada = brigada.idEstadoBrigada
+                })
+                .ToListAsync();
 
             return Ok(brigadas);
         }
 
+        // GET: api/Brigadas/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<BrigadasResponseDto>> GetBrigada(int id)
+        public async Task<ActionResult<BrigadaResponseDto>> GetBrigada(int id)
         {
             var brigada = await _context.Brigadas
-                .Include(b => b.estadoBrigada)
-                .Where(b => !b.isDeleted && b.idBrigada == id)
-                .Select(b => new BrigadasResponseDto
+                .Where(brigada => !brigada.isDeleted)
+                .Where(brigada => brigada.idBrigada == id)
+                .Select(brigada => new BrigadaResponseDto
                 {
-                    idBrigada = b.idBrigada,
-                    nombreBrigada = b.nombreBrigada,
-                    fechaBrigada = b.fechaBrigada,
-                    horaInicio = b.horaInicio,
-                    horaFin = b.horaFin,
-                    ubicacion = b.ubicacion,
-                    cobertura = b.cobertura,
-                    observaciones = b.observaciones,
-                    estadoBrigada = b.estadoBrigada != null ? b.estadoBrigada.estado : null
-                }).FirstOrDefaultAsync();
+                    idBrigada = brigada.idBrigada,
+                    nombreBrigada = brigada.nombreBrigada,
+                    fechaBrigada = brigada.fechaBrigada,
+                    horaInicio = brigada.horaInicio,
+                    horaFin = brigada.horaFin,
+                    ubicacion = brigada.ubicacion,
+                    cobertura = brigada.cobertura,
+                    observaciones = brigada.observaciones,
+                    idEstadoBrigada = brigada.idEstadoBrigada
+                })
+                .FirstOrDefaultAsync();
 
             if (brigada == null)
             {
-                return NotFound();
+                return NotFound(new
+                {
+                    mensaje = "No se encontró la brigada con el id proporcionado. (ID: " + id + ")"
+                });
             }
 
             return Ok(brigada);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutBrigada(int id, BrigadasFormDto brigadaDto)
+        // POST: api/Brigadas
+        [HttpPost]
+        public async Task<ActionResult<BrigadaResponseDto>> PostBrigada([FromForm] BrigadaFormDto request)
         {
-            var brigada = await _context.Brigadas.FindAsync(id);
-            if (brigada == null || brigada.isDeleted)
+            if (string.IsNullOrWhiteSpace(request.nombreBrigada))
             {
-                return NotFound();
+                return BadRequest(new
+                {
+                    mensaje = "El campo 'nombreBrigada' es obligatorio y no puede estar vacío."
+                });
             }
 
-            brigada.nombreBrigada = brigadaDto.nombreBrigada;
-            brigada.fechaBrigada = brigadaDto.fechaBrigada;
-            brigada.horaInicio = brigadaDto.horaInicio;
-            brigada.horaFin = brigadaDto.horaFin;
-            brigada.ubicacion = brigadaDto.ubicacion;
-            brigada.cobertura = brigadaDto.cobertura;
-            brigada.observaciones = brigadaDto.observaciones;
-            brigada.idEstadoBrigada = brigadaDto.idEstadoBrigada;
-
-            _context.Brigadas.Update(brigada);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        [HttpPost]
-        public async Task<ActionResult<BrigadasResponseDto>> PostBrigada(BrigadasFormDto brigadaDto)
-        {
-            var brigada = new Brigada
+            if (string.IsNullOrWhiteSpace(request.ubicacion))
             {
-                nombreBrigada = brigadaDto.nombreBrigada,
-                fechaBrigada = brigadaDto.fechaBrigada,
-                horaInicio = brigadaDto.horaInicio,
-                horaFin = brigadaDto.horaFin,
-                ubicacion = brigadaDto.ubicacion,
-                cobertura = brigadaDto.cobertura,
-                observaciones = brigadaDto.observaciones,
-                idEstadoBrigada = brigadaDto.idEstadoBrigada
+                return BadRequest(new
+                {
+                    mensaje = "El campo 'ubicacion' es obligatorio y no puede estar vacío."
+                });
+            }
+
+            if (request.horaFin <= request.horaInicio)
+            {
+                return BadRequest(new
+                {
+                    mensaje = "La hora de finalización debe ser mayor que la hora de inicio."
+                });
+            }
+
+            var existeEstadoBrigada = await _context.Estados
+                .AnyAsync(estado => !estado.isDeleted && estado.idEstado == request.idEstadoBrigada);
+
+            if (!existeEstadoBrigada)
+            {
+                return BadRequest(new
+                {
+                    mensaje = "No existe un estado de brigada con el id proporcionado. (ID: " + request.idEstadoBrigada + ")"
+                });
+            }
+
+            var existeBrigada = await _context.Brigadas
+                .AnyAsync(brigada => !brigada.isDeleted &&
+                    brigada.nombreBrigada.ToLower() == request.nombreBrigada.ToLower() &&
+                    brigada.fechaBrigada == request.fechaBrigada);
+
+            if (existeBrigada)
+            {
+                return BadRequest(new
+                {
+                    mensaje = "Ya existe una brigada con el mismo nombre y fecha. (Nombre ingresado: " + request.nombreBrigada + ")"
+                });
+            }
+
+            var nuevaBrigada = new Brigada
+            {
+                nombreBrigada = request.nombreBrigada.Trim(),
+                fechaBrigada = request.fechaBrigada,
+                horaInicio = request.horaInicio,
+                horaFin = request.horaFin,
+                ubicacion = request.ubicacion.Trim(),
+                cobertura = request.cobertura?.Trim(),
+                observaciones = request.observaciones?.Trim(),
+                idEstadoBrigada = request.idEstadoBrigada,
+                isDeleted = false,
+                fechaCreacion = DateTime.Now
             };
 
-            _context.Brigadas.Add(brigada);
+            _context.Brigadas.Add(nuevaBrigada);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetBrigada), new { id = brigada.idBrigada }, brigada);
+            var responseDto = new BrigadaResponseDto
+            {
+                idBrigada = nuevaBrigada.idBrigada,
+                nombreBrigada = nuevaBrigada.nombreBrigada,
+                fechaBrigada = nuevaBrigada.fechaBrigada,
+                horaInicio = nuevaBrigada.horaInicio,
+                horaFin = nuevaBrigada.horaFin,
+                ubicacion = nuevaBrigada.ubicacion,
+                cobertura = nuevaBrigada.cobertura,
+                observaciones = nuevaBrigada.observaciones,
+                idEstadoBrigada = nuevaBrigada.idEstadoBrigada
+            };
+
+            return CreatedAtAction(
+                nameof(GetBrigada),
+                new { id = nuevaBrigada.idBrigada },
+                responseDto
+            );
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteBrigada(int id)
+        // PUT: api/Brigadas/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutBrigada(int id, [FromForm] BrigadaFormDto request)
         {
-            var brigada = await _context.Brigadas.FindAsync(id);
-            if (brigada == null || brigada.isDeleted)
+            var brigadaExistente = await _context.Brigadas
+                .FirstOrDefaultAsync(brigada => !brigada.isDeleted && brigada.idBrigada == id);
+
+            if (brigadaExistente == null)
             {
-                return NotFound();
+                return NotFound(new
+                {
+                    mensaje = "No se encontró la brigada con el id proporcionado. (ID: " + id + ")"
+                });
             }
 
-            brigada.isDeleted = true;
-            _context.Brigadas.Update(brigada);
+            if (string.IsNullOrWhiteSpace(request.nombreBrigada))
+            {
+                return BadRequest(new
+                {
+                    mensaje = "El campo 'nombreBrigada' es obligatorio y no puede estar vacío."
+                });
+            }
+
+            if (string.IsNullOrWhiteSpace(request.ubicacion))
+            {
+                return BadRequest(new
+                {
+                    mensaje = "El campo 'ubicacion' es obligatorio y no puede estar vacío."
+                });
+            }
+
+            if (request.horaFin <= request.horaInicio)
+            {
+                return BadRequest(new
+                {
+                    mensaje = "La hora de finalización debe ser mayor que la hora de inicio."
+                });
+            }
+
+            var existeEstadoBrigada = await _context.Estados
+                .AnyAsync(estado => !estado.isDeleted && estado.idEstado == request.idEstadoBrigada);
+
+            if (!existeEstadoBrigada)
+            {
+                return BadRequest(new
+                {
+                    mensaje = "No existe un estado de brigada con el id proporcionado. (ID: " + request.idEstadoBrigada + ")"
+                });
+            }
+
+            var existeOtraBrigadaConMismoNombreYFecha = await _context.Brigadas
+                .Where(brigada => !brigada.isDeleted)
+                .AnyAsync(brigada =>
+                    brigada.idBrigada != id &&
+                    brigada.nombreBrigada.ToLower() == request.nombreBrigada.ToLower() &&
+                    brigada.fechaBrigada == request.fechaBrigada);
+
+            if (existeOtraBrigadaConMismoNombreYFecha)
+            {
+                return BadRequest(new
+                {
+                    mensaje = "Ya existe otra brigada con el mismo nombre y fecha. (Nombre ingresado: " + request.nombreBrigada + ")"
+                });
+            }
+
+            brigadaExistente.nombreBrigada = request.nombreBrigada.Trim();
+            brigadaExistente.fechaBrigada = request.fechaBrigada;
+            brigadaExistente.horaInicio = request.horaInicio;
+            brigadaExistente.horaFin = request.horaFin;
+            brigadaExistente.ubicacion = request.ubicacion.Trim();
+            brigadaExistente.cobertura = string.IsNullOrWhiteSpace(request.cobertura)
+                ? brigadaExistente.cobertura
+                : request.cobertura.Trim();
+            brigadaExistente.observaciones = string.IsNullOrWhiteSpace(request.observaciones)
+                ? brigadaExistente.observaciones
+                : request.observaciones.Trim();
+            brigadaExistente.idEstadoBrigada = request.idEstadoBrigada;
+            brigadaExistente.fechaActualizacion = DateTime.Now;
+
+            _context.Entry(brigadaExistente).State = EntityState.Modified;
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok(new
+            {
+                mensaje = "La brigada " + brigadaExistente.nombreBrigada + " ha sido actualizada exitosamente. (ID: " + id + " - " + brigadaExistente.nombreBrigada + ")"
+            });
         }
 
-        private bool BrigadaExists(int id)
+        // POST: api/Brigadas/delete/5
+        [HttpPost("delete/{id}")]
+        public async Task<IActionResult> DeleteBrigada(int id)
         {
-            return _context.Brigadas.Any(e => e.idBrigada == id);
+            var brigadaExistente = await _context.Brigadas
+                .FirstOrDefaultAsync(brigada => !brigada.isDeleted && brigada.idBrigada == id);
+
+            if (brigadaExistente == null)
+            {
+                return NotFound(new
+                {
+                    mensaje = "No se encontró la brigada con el id proporcionado. (ID: " + id + ")"
+                });
+            }
+
+            brigadaExistente.isDeleted = true;
+            brigadaExistente.fechaActualizacion = DateTime.Now;
+
+            _context.Entry(brigadaExistente).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                mensaje = "La brigada ha sido eliminada exitosamente. (ID: " + id + ")"
+            });
         }
     }
 }

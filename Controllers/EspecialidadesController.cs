@@ -17,93 +17,178 @@ namespace sigevet.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<EspecialidadesResponseDto>>> GetEspecialidades()
+        public async Task<ActionResult<IEnumerable<EspecialidadResponseDto>>> GetEspecialidades()
         {
             var especialidades = await _context.Especialidades
-                .Where(e => !e.isDeleted)
-                .Select(e => new EspecialidadesResponseDto
+                .Where(especialidad => !especialidad.isDeleted)
+                .Select(especialidad => new EspecialidadResponseDto
                 {
-                    idEspecialidad = e.idEspecialidad,
-                    especialidad = e.especialidad,
-                    descripcion = e.descripcion
-                }).ToListAsync();
+                    idEspecialidad = especialidad.idEspecialidad,
+                    especialidad = especialidad.especialidad,
+                    descripcion = especialidad.descripcion
+                })
+                .ToListAsync();
 
             return Ok(especialidades);
         }
 
+        // GET: api/Especialidades/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<EspecialidadesResponseDto>> GetEspecialidad(int id)
+        public async Task<ActionResult<EspecialidadResponseDto>> GetEspecialidad(int id)
         {
             var especialidad = await _context.Especialidades
-                .Where(e => !e.isDeleted && e.idEspecialidad == id)
-                .Select(e => new EspecialidadesResponseDto
+                .Where(especialidad => !especialidad.isDeleted)
+                .Where(especialidad => especialidad.idEspecialidad == id)
+                .Select(especialidad => new EspecialidadResponseDto
                 {
-                    idEspecialidad = e.idEspecialidad,
-                    especialidad = e.especialidad,
-                    descripcion = e.descripcion
-                }).FirstOrDefaultAsync();
+                    idEspecialidad = especialidad.idEspecialidad,
+                    especialidad = especialidad.especialidad,
+                    descripcion = especialidad.descripcion
+                })
+                .FirstOrDefaultAsync();
 
             if (especialidad == null)
             {
-                return NotFound();
+                return NotFound(new
+                {
+                    mensaje = "No se encontró la especialidad con el id proporcionado. (ID: " + id + ")"
+                });
             }
 
             return Ok(especialidad);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutEspecialidad(int id, EspecialidadesFormDto especialidadDto)
+        // POST: api/Especialidades
+        [HttpPost]
+        public async Task<ActionResult<EspecialidadResponseDto>> PostEspecialidad([FromForm] EspecialidadFormDto request)
         {
-            var especialidad = await _context.Especialidades.FindAsync(id);
-            if (especialidad == null || especialidad.isDeleted)
+            if (string.IsNullOrWhiteSpace(request.especialidad))
             {
-                return NotFound();
+                return BadRequest(new
+                {
+                    mensaje = "El campo 'especialidad' es obligatorio y no puede estar vacío."
+                });
             }
 
-            especialidad.especialidad = especialidadDto.especialidad;
-            especialidad.descripcion = especialidadDto.descripcion;
+            var existeEspecialidad = await _context.Especialidades
+                .AnyAsync(especialidad =>
+                    !especialidad.isDeleted &&
+                    especialidad.especialidad.ToLower() == request.especialidad.ToLower());
 
-            _context.Especialidades.Update(especialidad);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        [HttpPost]
-        public async Task<ActionResult<EspecialidadesResponseDto>> PostEspecialidad(EspecialidadesFormDto especialidadDto)
-        {
-            var especialidad = new Especialidad
+            if (existeEspecialidad)
             {
-                idEspecialidad = 0,
-                especialidad = especialidadDto.especialidad,
-                descripcion = especialidadDto.descripcion
+                return BadRequest(new
+                {
+                    mensaje = "Ya existe una especialidad con el mismo nombre. (Nombre ingresado: " + request.especialidad + ")"
+                });
+            }
+
+            var nuevaEspecialidad = new Especialidad
+            {
+                especialidad = request.especialidad.Trim(),
+                descripcion = request.descripcion?.Trim(),
+                isDeleted = false,
+                fechaCreacion = DateTime.Now
             };
 
-            _context.Especialidades.Add(especialidad);
+            _context.Especialidades.Add(nuevaEspecialidad);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetEspecialidad), new { id = especialidad.idEspecialidad }, especialidad);
+            var responseDto = new EspecialidadResponseDto
+            {
+                idEspecialidad = nuevaEspecialidad.idEspecialidad,
+                especialidad = nuevaEspecialidad.especialidad,
+                descripcion = nuevaEspecialidad.descripcion
+            };
+
+            return CreatedAtAction(
+                nameof(GetEspecialidad),
+                new { id = nuevaEspecialidad.idEspecialidad },
+                responseDto
+            );
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteEspecialidad(int id)
+        // PUT: api/Especialidades/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutEspecialidad(int id, [FromForm] EspecialidadFormDto request)
         {
-            var especialidad = await _context.Especialidades.FindAsync(id);
-            if (especialidad == null || especialidad.isDeleted)
+            var especialidadExistente = await _context.Especialidades
+                .FirstOrDefaultAsync(especialidad =>
+                    !especialidad.isDeleted &&
+                    especialidad.idEspecialidad == id);
+
+            if (especialidadExistente == null)
             {
-                return NotFound();
+                return NotFound(new
+                {
+                    mensaje = "No se encontró la especialidad con el id proporcionado. (ID: " + id + ")"
+                });
             }
 
-            especialidad.isDeleted = true;
-            _context.Especialidades.Update(especialidad);
+            if (string.IsNullOrWhiteSpace(request.especialidad))
+            {
+                return BadRequest(new
+                {
+                    mensaje = "El campo 'especialidad' es obligatorio y no puede estar vacío."
+                });
+            }
+
+            var existeOtraEspecialidadConMismoNombre = await _context.Especialidades
+                .Where(especialidad => !especialidad.isDeleted)
+                .AnyAsync(especialidad =>
+                    especialidad.idEspecialidad != id &&
+                    especialidad.especialidad.ToLower() == request.especialidad.ToLower());
+
+            if (existeOtraEspecialidadConMismoNombre)
+            {
+                return BadRequest(new
+                {
+                    mensaje = "Ya existe otra especialidad con el mismo nombre. (Nombre ingresado: " + request.especialidad + ")"
+                });
+            }
+
+            especialidadExistente.especialidad = request.especialidad.Trim();
+            especialidadExistente.descripcion = string.IsNullOrWhiteSpace(request.descripcion)
+                ? especialidadExistente.descripcion
+                : request.descripcion.Trim();
+            especialidadExistente.fechaActualizacion = DateTime.Now;
+
+            _context.Entry(especialidadExistente).State = EntityState.Modified;
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok(new
+            {
+                mensaje = "La especialidad " + especialidadExistente.especialidad + " ha sido actualizada exitosamente. (ID: " + id + " - " + especialidadExistente.especialidad + ")"
+            });
         }
 
-        private bool EspecialidadExists(int id)
+        // POST: api/Especialidades/delete/5
+        [HttpPost("delete/{id}")]
+        public async Task<IActionResult> DeleteEspecialidad(int id)
         {
-            return _context.Especialidades.Any(e => e.idEspecialidad == id);
+            var especialidadExistente = await _context.Especialidades
+                .FirstOrDefaultAsync(especialidad =>
+                    !especialidad.isDeleted &&
+                    especialidad.idEspecialidad == id);
+
+            if (especialidadExistente == null)
+            {
+                return NotFound(new
+                {
+                    mensaje = "No se encontró la especialidad con el id proporcionado. (ID: " + id + ")"
+                });
+            }
+
+            especialidadExistente.isDeleted = true;
+            especialidadExistente.fechaActualizacion = DateTime.Now;
+
+            _context.Entry(especialidadExistente).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                mensaje = "La especialidad ha sido eliminada exitosamente. (ID: " + id + ")"
+            });
         }
     }
 }
