@@ -100,10 +100,5 @@ namespace sigevet.Controllers
 
             return NoContent();
         }
-
-        private bool TipoVacunaExists(int id)
-        {
-            return _context.TiposVacuna.Any(e => e.idTipoVacuna == id);
-        }
     }
 }

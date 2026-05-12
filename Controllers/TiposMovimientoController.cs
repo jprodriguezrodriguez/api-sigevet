@@ -99,10 +99,5 @@ namespace sigevet.Controllers
 
             return NoContent();
         }
-
-        private bool TipoMovimientoExists(int id)
-        {
-            return _context.TiposMovimiento.Any(e => e.idTipoMovimiento == id);
-        }
     }
 }

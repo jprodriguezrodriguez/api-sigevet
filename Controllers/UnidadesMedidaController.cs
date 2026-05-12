@@ -104,10 +104,5 @@ namespace sigevet.Controllers
 
             return NoContent();
         }
-
-        private bool UnidadMedidaExists(int id)
-        {
-            return _context.UnidadesMedida.Any(e => e.idUnidadMedida == id);
-        }
     }
 }

@@ -104,10 +104,5 @@ namespace sigevet.Controllers
 
             return NoContent();
         }
-
-        private bool TipoContactoExists(int id)
-        {
-            return _context.TiposContacto.Any(e => e.idTipoContacto == id);
-        }
     }
 }

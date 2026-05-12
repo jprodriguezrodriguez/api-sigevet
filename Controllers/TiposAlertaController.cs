@@ -98,10 +98,5 @@ namespace sigevet.Controllers
 
             return NoContent();
         }
-
-        private bool TipoAlertaExists(int id)
-        {
-            return _context.TiposAlerta.Any(e => e.idTipoAlerta == id);
-        }
     }
 }

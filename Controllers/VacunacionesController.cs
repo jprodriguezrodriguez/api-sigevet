@@ -180,10 +180,5 @@ namespace sigevet.Controllers
 
             return NoContent();
         }
-
-        private bool VacunacionExists(int id)
-        {
-            return _context.Vacunaciones.Any(e => e.idVacunacion == id);
-        }
     }
 }
