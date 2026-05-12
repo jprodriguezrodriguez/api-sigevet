@@ -62,7 +62,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutTutor(int id, TutoresFormDto tutorDto)
+        public async Task<IActionResult> PutTutor(int id, [FromForm] TutoresFormDto tutorDto)
         {
             if (id != tutorDto.idPersonaTut)
             {
@@ -86,7 +86,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<TutoresResponseDto>> PostTutor(TutoresFormDto tutorDto)
+        public async Task<ActionResult<TutoresResponseDto>> PostTutor([FromForm] TutoresFormDto tutorDto)
         {
             var tutor = new Tutor
             {

@@ -64,7 +64,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutInsumoSanitario(int id, InsumosSanitariosFormDto insumoDto)
+        public async Task<IActionResult> PutInsumoSanitario(int id, [FromForm] InsumosSanitariosFormDto insumoDto)
         {
             var insumo = await _context.InsumosSanitarios.FindAsync(id);
             if (insumo == null || insumo.isDeleted)
@@ -85,7 +85,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<InsumosSanitariosResponseDto>> PostInsumoSanitario(InsumosSanitariosFormDto insumoDto)
+        public async Task<ActionResult<InsumosSanitariosResponseDto>> PostInsumoSanitario([FromForm] InsumosSanitariosFormDto insumoDto)
         {
             var insumo = new InsumoSanitario
             {

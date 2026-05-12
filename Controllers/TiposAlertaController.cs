@@ -52,7 +52,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutTipoAlerta(int id, TiposAlertaFormDto tipoDto)
+        public async Task<IActionResult> PutTipoAlerta(int id, [FromForm] TiposAlertaFormDto tipoDto)
         {
             var tipo = await _context.TiposAlerta.FindAsync(id);
             if (tipo == null || tipo.isDeleted)
@@ -69,7 +69,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<TiposAlertaResponseDto>> PostTipoAlerta(TiposAlertaFormDto tipoDto)
+        public async Task<ActionResult<TiposAlertaResponseDto>> PostTipoAlerta([FromForm] TiposAlertaFormDto tipoDto)
         {
             var tipo = new TipoAlerta
             {

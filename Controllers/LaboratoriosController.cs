@@ -54,7 +54,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutLaboratorio(int id, LaboratoriosFormDto laboratorioDto)
+        public async Task<IActionResult> PutLaboratorio(int id, [FromForm] LaboratoriosFormDto laboratorioDto)
         {
             var laboratorio = await _context.Laboratorios.FindAsync(id);
             if (laboratorio == null || laboratorio.isDeleted)
@@ -73,7 +73,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<LaboratoriosResponseDto>> PostLaboratorio(LaboratoriosFormDto laboratorioDto)
+        public async Task<ActionResult<LaboratoriosResponseDto>> PostLaboratorio([FromForm] LaboratoriosFormDto laboratorioDto)
         {
             var laboratorio = new Laboratorio
             {

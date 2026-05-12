@@ -97,7 +97,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutVacunacion(int id, VacunacionesFormDto vacunacionDto)
+        public async Task<IActionResult> PutVacunacion(int id, [FromForm] VacunacionesFormDto vacunacionDto)
         {
             var vacunacion = await _context.Vacunaciones.FindAsync(id);
             if (vacunacion == null || vacunacion.isDeleted)
@@ -127,7 +127,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<VacunacionesResponseDto>> PostVacunacion(VacunacionesFormDto vacunacionDto)
+        public async Task<ActionResult<VacunacionesResponseDto>> PostVacunacion([FromForm] VacunacionesFormDto vacunacionDto)
         {
             var esquema = await _context.EsquemasVacunacion.FirstOrDefaultAsync(e => e.idEsquemaVacunacion == vacunacionDto.idEsquemaVacunacion && !e.isDeleted);
             if (esquema == null)

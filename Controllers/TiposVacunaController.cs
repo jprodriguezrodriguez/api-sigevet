@@ -52,7 +52,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutTipoVacuna(int id, TiposVacunaFormDto tipoDto)
+        public async Task<IActionResult> PutTipoVacuna(int id, [FromForm] TiposVacunaFormDto tipoDto)
         {
             var tipo = await _context.TiposVacuna.FindAsync(id);
             if (tipo == null || tipo.isDeleted)
@@ -70,7 +70,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<TiposVacunaResponseDto>> PostTipoVacuna(TiposVacunaFormDto tipoDto)
+        public async Task<ActionResult<TiposVacunaResponseDto>> PostTipoVacuna([FromForm] TiposVacunaFormDto tipoDto)
         {
             var tipo = new TipoVacuna
             {
