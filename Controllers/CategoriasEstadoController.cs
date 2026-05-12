@@ -47,7 +47,7 @@ namespace sigevet.Controllers
                 })
                 .FirstOrDefaultAsync();
 
-            if (categoria == null)
+            if (categoriaEstado == null)
             {
                 return NotFound(new
                 {

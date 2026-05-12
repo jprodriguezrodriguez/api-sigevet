@@ -70,7 +70,7 @@ namespace sigevet.Controllers
 
         // PUT: api/CuentasUsuarios/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutCuentasUsuarios(int id, CuentasUsuariosFormDto cuentaUsuario)
+        public async Task<IActionResult> PutCuentasUsuarios(int id, [FromForm] CuentasUsuariosFormDto cuentaUsuario)
         {
             var cuentaExistente = await _context.CuentasUsuarios.FindAsync(id);
             if (cuentaExistente == null || cuentaExistente.isDeleted)
@@ -122,7 +122,7 @@ namespace sigevet.Controllers
         // POST: api/CuentasUsuarios
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<CuentasUsuarios>> PostCuentasUsuarios(CuentasUsuariosFormDto cuentaUsuario)
+        public async Task<ActionResult<CuentasUsuarios>> PostCuentasUsuarios([FromForm] CuentasUsuariosFormDto cuentaUsuario)
         {
             if (!PersonaExist(cuentaUsuario.idPersona) || !RolExist(cuentaUsuario.idRol))
             {
@@ -185,7 +185,7 @@ namespace sigevet.Controllers
         // POST: api/CuentasUsuarios/login
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<ActionResult<LoginResponseDto>> Login(LoginRequestDto loginRequest)
+        public async Task<ActionResult<LoginResponseDto>> Login([FromForm] LoginRequestDto loginRequest)
         {
             var user = await _context.CuentasUsuarios
                 .Include(u => u.rolesUsuario)
@@ -245,7 +245,7 @@ namespace sigevet.Controllers
         // POST: api/CuentasUsuarios/refresh
         [AllowAnonymous]
         [HttpPost("refresh")]
-        public async Task<ActionResult<LoginResponseDto>> RefreshToken(RefreshTokenRequestDto refreshRequest)
+        public async Task<ActionResult<LoginResponseDto>> RefreshToken([FromForm] RefreshTokenRequestDto refreshRequest)
         {
             var user = await _tokenService.GetUserByRefreshTokenAsync(refreshRequest.RefreshToken);
             if (user == null)
