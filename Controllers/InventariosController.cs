@@ -105,10 +105,5 @@ namespace sigevet.Controllers
 
             return NoContent();
         }
-
-        private bool InventarioExists(int id)
-        {
-            return _context.Inventarios.Any(e => e.idInventario == id);
-        }
     }
 }

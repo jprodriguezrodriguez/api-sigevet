@@ -129,10 +129,5 @@ namespace sigevet.Controllers
 
             return Ok(razas);
         }
-
-        private bool RazaExists(int id)
-        {
-            return _context.Razas.Any(e => e.idRaza == id);
-        }
     }
 }

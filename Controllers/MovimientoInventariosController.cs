@@ -133,10 +133,5 @@ namespace sigevet.Controllers
 
             return NoContent();
         }
-
-        private bool MovimientoInventarioExists(int id)
-        {
-            return _context.MovimientoInventario.Any(e => e.idMovimientoInventario == id);
-        }
     }
 }

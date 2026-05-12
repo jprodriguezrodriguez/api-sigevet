@@ -103,10 +103,5 @@ namespace sigevet.Controllers
 
             return NoContent();
         }
-
-        private bool LaboratorioExists(int id)
-        {
-            return _context.Laboratorios.Any(e => e.idLaboratorio == id);
-        }
     }
 }

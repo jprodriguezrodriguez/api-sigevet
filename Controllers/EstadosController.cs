@@ -128,10 +128,5 @@ namespace sigevet.Controllers
 
             return Ok(estados);
         }
-
-        private bool EstadoExists(int id)
-        {
-            return _context.Estados.Any(e => e.idEstado == id);
-        }
     }
 }

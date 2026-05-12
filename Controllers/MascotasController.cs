@@ -131,10 +131,5 @@ namespace sigevet.Controllers
 
             return NoContent();
         }
-
-        private bool MascotaExists(int id)
-        {
-            return _context.Mascotas.Any(e => e.idMascota == id);
-        }
     }
 }
