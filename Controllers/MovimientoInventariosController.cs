@@ -74,7 +74,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutMovimientoInventario(int id, MovimientoInventariosFormDto movimientoDto)
+        public async Task<IActionResult> PutMovimientoInventario(int id, [FromForm] MovimientoInventariosFormDto movimientoDto)
         {
             var movimiento = await _context.MovimientoInventario.FindAsync(id);
             if (movimiento == null || movimiento.isDeleted)
@@ -98,7 +98,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<MovimientoInventariosResponseDto>> PostMovimientoInventario(MovimientoInventariosFormDto movimientoDto)
+        public async Task<ActionResult<MovimientoInventariosResponseDto>> PostMovimientoInventario([FromForm] MovimientoInventariosFormDto movimientoDto)
         {
             var movimiento = new MovimientoInventario
             {

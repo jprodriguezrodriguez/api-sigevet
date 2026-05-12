@@ -52,7 +52,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutUnidadMedida(int id, UnidadesMedidaFormDto unidadDto)
+        public async Task<IActionResult> PutUnidadMedida(int id, [FromForm] UnidadesMedidaFormDto unidadDto)
         {
             var unidad = await _context.UnidadesMedida.FindAsync(id);
             if (unidad == null || unidad.isDeleted)
@@ -70,7 +70,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<UnidadesMedidaResponseDto>> PostUnidadMedida(UnidadesMedidaFormDto unidadDto)
+        public async Task<ActionResult<UnidadesMedidaResponseDto>> PostUnidadMedida([FromForm] UnidadesMedidaFormDto unidadDto)
         {
             var unidad = new UnidadMedida
             {
@@ -103,11 +103,6 @@ namespace sigevet.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        private bool UnidadMedidaExists(int id)
-        {
-            return _context.UnidadesMedida.Any(e => e.idUnidadMedida == id);
         }
     }
 }

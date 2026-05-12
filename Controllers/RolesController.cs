@@ -55,7 +55,7 @@ namespace sigevet.Controllers
 
         // PUT: api/Roles/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutRoles(int id, RolesFormDto rolDto)
+        public async Task<IActionResult> PutRoles(int id, [FromForm] RolesFormDto rolDto)
         {
             var rol = await _context.Roles.FindAsync(id);
             if (rol == null)
@@ -90,7 +90,7 @@ namespace sigevet.Controllers
         // POST: api/Roles
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult> PostRoles(RolesFormDto rolDto)
+        public async Task<ActionResult> PostRoles([FromForm] RolesFormDto rolDto)
         {
             // Buscar si existe un rol con ese nombre (eliminado o no)
             var rolExistente = await _context.Roles.FirstOrDefaultAsync(e => e.rolUsuario == rolDto.rolUsuario);

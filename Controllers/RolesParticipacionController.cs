@@ -52,7 +52,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutRolParticipacion(int id, RolesParticipacionFormDto rolDto)
+        public async Task<IActionResult> PutRolParticipacion(int id, [FromForm] RolesParticipacionFormDto rolDto)
         {
             var rol = await _context.RolesParticipacion.FindAsync(id);
             if (rol == null || rol.isDeleted)
@@ -69,7 +69,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<RolesParticipacionResponseDto>> PostRolParticipacion(RolesParticipacionFormDto rolDto)
+        public async Task<ActionResult<RolesParticipacionResponseDto>> PostRolParticipacion([FromForm] RolesParticipacionFormDto rolDto)
         {
             var rol = new RolParticipacion
             {

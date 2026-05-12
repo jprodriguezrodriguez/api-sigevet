@@ -52,7 +52,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutTipoContacto(int id, TiposContactoFormDto tipoDto)
+        public async Task<IActionResult> PutTipoContacto(int id, [FromForm] TiposContactoFormDto tipoDto)
         {
             var tipo = await _context.TiposContacto.FindAsync(id);
             if (tipo == null || tipo.isDeleted)
@@ -70,7 +70,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<TiposContactoResponseDto>> PostTipoContacto(TiposContactoFormDto tipoDto)
+        public async Task<ActionResult<TiposContactoResponseDto>> PostTipoContacto([FromForm] TiposContactoFormDto tipoDto)
         {
             var tipo = new TipoContacto
             {
@@ -103,11 +103,6 @@ namespace sigevet.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        private bool TipoContactoExists(int id)
-        {
-            return _context.TiposContacto.Any(e => e.idTipoContacto == id);
         }
     }
 }

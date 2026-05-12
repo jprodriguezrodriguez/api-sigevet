@@ -52,7 +52,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutTipoMovimiento(int id, TiposMovimientoFormDto tipoDto)
+        public async Task<IActionResult> PutTipoMovimiento(int id, [FromForm] TiposMovimientoFormDto tipoDto)
         {
             var tipo = await _context.TiposMovimiento.FindAsync(id);
             if (tipo == null || tipo.isDeleted)
@@ -69,7 +69,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<TiposMovimientoResponseDto>> PostTipoMovimiento(TiposMovimientoFormDto tipoDto)
+        public async Task<ActionResult<TiposMovimientoResponseDto>> PostTipoMovimiento([FromForm] TiposMovimientoFormDto tipoDto)
         {
             var tipo = new TipoMovimiento
             {
@@ -98,11 +98,6 @@ namespace sigevet.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        private bool TipoMovimientoExists(int id)
-        {
-            return _context.TiposMovimiento.Any(e => e.idTipoMovimiento == id);
         }
     }
 }

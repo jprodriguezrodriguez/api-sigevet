@@ -58,7 +58,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutTutorMascota(int id, TutoresMascotaFormDto registroDto)
+        public async Task<IActionResult> PutTutorMascota(int id, [FromForm] TutoresMascotaFormDto registroDto)
         {
             var registro = await _context.TutoresMascota.FindAsync(id);
             if (registro == null || registro.isDeleted)
@@ -76,7 +76,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<TutoresMascotaResponseDto>> PostTutorMascota(TutoresMascotaFormDto registroDto)
+        public async Task<ActionResult<TutoresMascotaResponseDto>> PostTutorMascota([FromForm] TutoresMascotaFormDto registroDto)
         {
             var registro = new TutorMascota
             {
@@ -104,11 +104,6 @@ namespace sigevet.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        private bool TutorMascotaExists(int id)
-        {
-            return _context.TutoresMascota.Any(e => e.idTutorMascota == id);
         }
     }
 }

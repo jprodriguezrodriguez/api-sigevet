@@ -129,7 +129,7 @@ namespace sigevet.Controllers
         // PUT: api/EsquemasVacunacion/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutEsquemaVacunacion(int id, EsquemasVacunacionFormDto esquemaVacunacionDto)
+        public async Task<IActionResult> PutEsquemaVacunacion(int id, [FromForm] EsquemasVacunacionFormDto esquemaVacunacionDto)
         {
             var esquemaVacunacion = await _context.EsquemasVacunacion.FindAsync(id);
             if (esquemaVacunacion == null || esquemaVacunacion.isDeleted)
@@ -152,7 +152,7 @@ namespace sigevet.Controllers
         // POST: api/EsquemasVacunacion
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<EsquemasVacunacionResponseDto>> PostEsquemaVacunacion(EsquemasVacunacionFormDto esquemaVacunacionDto)
+        public async Task<ActionResult<EsquemasVacunacionResponseDto>> PostEsquemaVacunacion([FromForm] EsquemasVacunacionFormDto esquemaVacunacionDto)
         {
             var esquemaVacunacion = new EsquemaVacunacion
             {

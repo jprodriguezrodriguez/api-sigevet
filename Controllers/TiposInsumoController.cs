@@ -52,7 +52,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutTipoInsumo(int id, TiposInsumoFormDto tipoDto)
+        public async Task<IActionResult> PutTipoInsumo(int id, [FromForm] TiposInsumoFormDto tipoDto)
         {
             var tipo = await _context.TiposInsumo.FindAsync(id);
             if (tipo == null || tipo.isDeleted)
@@ -69,7 +69,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<TiposInsumoResponseDto>> PostTipoInsumo(TiposInsumoFormDto tipoDto)
+        public async Task<ActionResult<TiposInsumoResponseDto>> PostTipoInsumo([FromForm] TiposInsumoFormDto tipoDto)
         {
             var tipo = new TipoInsumo
             {

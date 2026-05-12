@@ -56,7 +56,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutEstado(int id, EstadosFormDto estadoDto)
+        public async Task<IActionResult> PutEstado(int id, [FromForm] EstadosFormDto estadoDto)
         {
             var estado = await _context.Estados.FindAsync(id);
             if (estado == null || estado.isDeleted)
@@ -75,7 +75,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<EstadosResponseDto>> PostEstado(EstadosFormDto estadoDto)
+        public async Task<ActionResult<EstadosResponseDto>> PostEstado([FromForm] EstadosFormDto estadoDto)
         {
             var estado = new Estado
             {

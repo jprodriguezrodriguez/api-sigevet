@@ -70,7 +70,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutPersona(int id, PersonasFormDto personaDto)
+        public async Task<IActionResult> PutPersona(int id, [FromForm] PersonasFormDto personaDto)
         {
             var persona = await _context.Personas.FindAsync(id);
             if (persona == null || persona.isDeleted)
@@ -95,7 +95,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<PersonasResponseDto>> PostPersona(PersonasFormDto personaDto)
+        public async Task<ActionResult<PersonasResponseDto>> PostPersona([FromForm] PersonasFormDto personaDto)
         {
             var persona = new Persona
             {

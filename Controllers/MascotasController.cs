@@ -72,7 +72,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutMascota(int id, MascotasFormDto mascotaDto)
+        public async Task<IActionResult> PutMascota(int id, [FromForm] MascotasFormDto mascotaDto)
         {
             var mascota = await _context.Mascotas.FindAsync(id);
             if (mascota == null || mascota.isDeleted)
@@ -96,7 +96,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<MascotasResponseDto>> PostMascota(MascotasFormDto mascotaDto)
+        public async Task<ActionResult<MascotasResponseDto>> PostMascota([FromForm] MascotasFormDto mascotaDto)
         {
             var mascota = new Mascota
             {

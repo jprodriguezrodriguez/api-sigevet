@@ -56,7 +56,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutInventario(int id, InventariosFormDto inventarioDto)
+        public async Task<IActionResult> PutInventario(int id, [FromForm] InventariosFormDto inventarioDto)
         {
             var inventario = await _context.Inventarios.FindAsync(id);
             if (inventario == null || inventario.isDeleted)
@@ -75,7 +75,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<InventariosResponseDto>> PostInventario(InventariosFormDto inventarioDto)
+        public async Task<ActionResult<InventariosResponseDto>> PostInventario([FromForm] InventariosFormDto inventarioDto)
         {
             var inventario = new Inventario
             {

@@ -56,7 +56,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutRaza(int id, RazasFormDto razaDto)
+        public async Task<IActionResult> PutRaza(int id, [FromForm] RazasFormDto razaDto)
         {
             var raza = await _context.Razas.FindAsync(id);
             if (raza == null || raza.isDeleted)
@@ -75,7 +75,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<RazasResponseDto>> PostRaza(RazasFormDto razaDto)
+        public async Task<ActionResult<RazasResponseDto>> PostRaza([FromForm] RazasFormDto razaDto)
         {
             var raza = new Raza
             {

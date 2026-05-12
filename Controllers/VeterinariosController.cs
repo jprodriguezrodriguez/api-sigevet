@@ -62,7 +62,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutVeterinario(int id, VeterinariosFormDto veterinarioDto)
+        public async Task<IActionResult> PutVeterinario(int id, [FromForm] VeterinariosFormDto veterinarioDto)
         {
             if (id != veterinarioDto.idPersonaVet)
             {
@@ -86,7 +86,7 @@ namespace sigevet.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<VeterinariosResponseDto>> PostVeterinario(VeterinariosFormDto veterinarioDto)
+        public async Task<ActionResult<VeterinariosResponseDto>> PostVeterinario([FromForm] VeterinariosFormDto veterinarioDto)
         {
             var veterinario = new Veterinario
             {

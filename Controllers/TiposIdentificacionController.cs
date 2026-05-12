@@ -17,20 +17,20 @@ namespace sigevet.Controllers
             _context = context;
         }
 
-        // GET: api/TipoIdentificacion
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<TipoIdentificacionResponseDto>>> GetTiposIdentificacion()
-        {
-            var tiposIdentificacion = await _context.TiposIdentificacion
-                .Where(tipId => !tipId.isDeleted)
-                .Select(tipId => new TipoIdentificacionResponseDto
-                {
-                    idTipoIdentificacion = tipId.idTipoIdentificacion,
-                    tipoIdentificacion = tipId.tipoIdentificacion,
-                    descripcion = tipId.descripcion
-                }).ToListAsync();
-            return Ok(tiposIdentificacion);
-        }
+            // GET: api/TipoIdentificacion
+            [HttpGet]
+            public async Task<ActionResult<IEnumerable<TipoIdentificacionResponseDto>>> GetTiposIdentificacion()
+            {
+                var tiposIdentificacion = await _context.TiposIdentificacion
+                    .Where(tipId => !tipId.isDeleted)
+                    .Select(tipId => new TipoIdentificacionResponseDto
+                    {
+                        idTipoIdentificacion = tipId.idTipoIdentificacion,
+                        tipoIdentificacion = tipId.tipoIdentificacion,
+                        descripcion = tipId.descripcion
+                    }).ToListAsync();
+                return Ok(tiposIdentificacion);
+            }
 
         // GET: api/TipoIdentificacions/5
         [HttpGet("{id}")]
